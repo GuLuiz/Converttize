@@ -571,7 +571,7 @@ class YT_Player_Admin_Settings {
             return;
         }
 
-        if (!defined('YTP_PLUGIN_PATH') || !class_exists('YT_Custom_Player_Plugin')) {
+        if (!defined('YTP_PLUGIN_PATH') || !class_exists('Converttize')) {
             return;
         }
 
@@ -663,10 +663,10 @@ class YT_Player_Admin_Settings {
             
             <?php if ($this->is_video_specific_editing) : ?>
             <p>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=' . YT_Custom_Player_Plugin::SETTINGS_PAGE_SLUG)); ?>" class="button button-secondary">
+                <a href="<?php echo esc_url(admin_url('admin.php?page=' . Converttize::SETTINGS_PAGE_SLUG)); ?>" class="button button-secondary">
                     <?php esc_html_e('Voltar para Configurações Globais', 'lume-player'); ?>
                 </a>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=' . YT_Custom_Player_Plugin::MAIN_MENU_SLUG)); ?>" class="button button-secondary" style="margin-left: 5px;">
+                <a href="<?php echo esc_url(admin_url('admin.php?page=' . Converttize::MAIN_MENU_SLUG)); ?>" class="button button-secondary" style="margin-left: 5px;">
                     <?php esc_html_e('Voltar para Listas de Vídeos', 'lume-player'); ?>
                 </a>
             </p>

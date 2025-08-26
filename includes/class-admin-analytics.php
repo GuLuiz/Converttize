@@ -41,8 +41,8 @@ class LumePlayer_Admin_Analytics {
 
         // Título dinâmico da página
         $page_title = $video_id 
-                      ? sprintf(__('Analytics de Retenção para Vídeo: %s', 'yt-player-custom'), esc_html($video_id)) 
-                      : __('Analytics de Retenção', 'yt-player-custom');
+                      ? sprintf(__('Analytics de Retenção para Vídeo: %s', 'converttize'), esc_html($video_id)) 
+                      : __('Analytics de Retenção', 'converttize');
 
         // NOVO: Renderiza o cabeçalho admin usando o método da instância principal do plugin
         if ($this->main_plugin_instance) {
@@ -85,7 +85,7 @@ class LumePlayer_Admin_Analytics {
                 <p>Selecione um vídeo da lista ou insira um ID manualmente para ver o gráfico.</p>
                 
                 <form method="get" action="">
-                    <input type="hidden" name="page" value="<?php echo esc_attr(YT_Custom_Player_Plugin::ANALYTICS_PAGE_SLUG); ?>">
+                    <input type="hidden" name="page" value="<?php echo esc_attr(Converttize::ANALYTICS_PAGE_SLUG); ?>">
                     <table class="form-table">
                         <tr>
                             <th scope="row">
