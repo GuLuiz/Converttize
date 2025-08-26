@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Converttize
  * Description: Player minimalista com UX fluida, botões próprios e desbloqueio inteligente.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: IGL Solutions
  * Text Domain: converttize 
  */
@@ -15,7 +15,7 @@ if (!defined('YTP_PLUGIN_URL'))
 if (!defined('YTP_PLUGIN_PATH'))
     define('YTP_PLUGIN_PATH', plugin_dir_path(__FILE__));
 if (!defined('YTP_VERSION'))
-    define('YTP_VERSION', '1.0.0');
+    define('YTP_VERSION', '1.0.3');
 
 // Função utilitária para extrair ID do YouTube
 function converttize_extract_youtube_id($input) {
