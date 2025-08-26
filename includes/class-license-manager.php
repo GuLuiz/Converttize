@@ -11,7 +11,7 @@
         private $main_plugin_instance; 
 
         // MODIFICADO: Construtor agora aceita a instância principal do plugin
-        // (A classe YT_Custom_Player_Plugin PRECISA passar $this para este construtor)
+        // (A classe Converttize PRECISA passar $this para este construtor)
         public function __construct($main_plugin_instance = null) { // Adicionado $main_plugin_instance com default null para compatibilidade
             $this->main_plugin_instance = $main_plugin_instance; // Armazena a instância principal
 

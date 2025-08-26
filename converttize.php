@@ -4,8 +4,8 @@
  * Plugin Name: Converttize
  * Description: Player minimalista com UX fluida, botões próprios e desbloqueio inteligente.
  * Version: 1.0.0
- * Author: Zentitech Solutions
- * Text Domain: yt-player-custom
+ * Author: IGL Solutions
+ * Text Domain: converttize 
  */
 
 defined('ABSPATH') || exit;
@@ -55,7 +55,7 @@ require_once YTP_PLUGIN_PATH . 'includes/class-admin-analytics.php'; // Inclui c
 require_once YTP_PLUGIN_PATH . 'includes/class-player-render.php';
 
 
-class YT_Custom_Player_Plugin {
+class Converttize {
     private static $assets_registered = false;
     private static $instance = null;
     private $options; // Armazenará as opções do plugin
@@ -197,8 +197,8 @@ class YT_Custom_Player_Plugin {
 
         // Se o usuário não configurou seu branding, volta para o logo e nome do plugin Converttize
         if (empty($logo_url) && empty($header_title)) {
-            $logo_url = YTP_PLUGIN_URL . 'assets/images/120x40.png'; // Logo padrão do Converttize
-            $header_title = __('', 'yt-player-custom'); // Nome padrão do Converttize
+            $logo_url = YTP_PLUGIN_URL . 'assets/images/20x20 - branco.png'; // Logo padrão do Converttize
+            $header_title = __('Converttize', 'converttize'); // Nome padrão do Converttize
             $header_link = admin_url('admin.php?page=' . self::MAIN_MENU_SLUG); // Link padrão do Converttize
         }
         
@@ -288,8 +288,8 @@ class YT_Custom_Player_Plugin {
     public function add_plugin_admin_menus() {
         // Menu principal de nível superior, agora será a página de listas
         add_menu_page(
-            __('Converttize', 'yt-player-custom'),
-            __('Converttize', 'yt-player-custom'),
+            __('Converttize', 'converttize'),
+            __('Converttize', 'converttize'),
             'manage_options',
             self::MAIN_MENU_SLUG,
             [$this, 'render_video_lists_page'],
@@ -302,8 +302,8 @@ class YT_Custom_Player_Plugin {
         // Submenu para "Analytics" 
         add_submenu_page(
             self::MAIN_MENU_SLUG,                      // PARENT_SLUG agora é o NOVO SLUG
-            __('Analytics de Retenção', 'yt-player-custom'),
-            __('Analytics', 'yt-player-custom'),
+            __('Analytics de Retenção', 'converttize'),
+            __('Analytics', 'converttize'),
             'manage_options',
             self::ANALYTICS_PAGE_SLUG,                    // Mantém o slug antigo
             [$this->admin_analytics_instance, 'lumeplayer_analytics_page'] // Callback da instância
@@ -312,8 +312,8 @@ class YT_Custom_Player_Plugin {
         // Submenu para "Licença" 
         add_submenu_page(
             self::MAIN_MENU_SLUG,                      // PARENT_SLUG agora é o NOVO SLUG
-            __('Gerenciamento de Licença', 'yt-player-custom'),
-            __('Licença', 'yt-player-custom'),
+            __('Gerenciamento de Licença', 'converttize'),
+            __('Licença', 'converttize'),
             'manage_options',
             self::LICENSE_PAGE_SLUG,
             [$this->license_manager_instance, 'license_page'] // Callback da instância
@@ -322,8 +322,8 @@ class YT_Custom_Player_Plugin {
         // Submenu para "Editor" 
         add_submenu_page(
             self::MAIN_MENU_SLUG,                      // PARENT_SLUG agora é o NOVO SLUG
-            __('Configurações do Player', 'yt-player-custom'),
-            __('Estilo Padrão', 'yt-player-custom'),
+            __('Configurações do Player', 'converttize'),
+            __('Estilo Padrão', 'converttize'),
             'manage_options',
             self::SETTINGS_PAGE_SLUG,                    // Mantém o slug antigo
             [$this->admin_settings_instance, 'render_settings_page'] // Callback da instância
@@ -333,7 +333,7 @@ class YT_Custom_Player_Plugin {
     // MÉTODO: Callback para a página "Listas" (agora é a página principal)
     public function render_video_lists_page() {
         // NOVO: Chama o cabeçalho admin 
-        $this->render_admin_header(__('Listas de Vídeos', 'yt-player-custom'));
+        $this->render_admin_header(__('Listas de Vídeos', 'converttize'));
 
         global $wpdb;
         $table = $wpdb->prefix . 'lumeplayer_analytics'; // Tabela de analytics
@@ -347,31 +347,31 @@ class YT_Custom_Player_Plugin {
         ?>
         <div class="wrap">
             <!-- REMOVIDO: Antigo H1 da página, agora gerado pelo render_admin_header -->
-            <p><?php esc_html_e('Aqui você pode visualizar uma lista de todos os IDs de vídeo para os quais há dados de analytics registrados e acessar seus respectivos gráficos de retenção ou editar as configurações do player para o vídeo específico.', 'yt-player-custom'); ?></p>
+            <p><?php esc_html_e('Aqui você pode visualizar uma lista de todos os IDs de vídeo para os quais há dados de analytics registrados e acessar seus respectivos gráficos de retenção ou editar as configurações do player para o vídeo específico.', 'converttize'); ?></p>
 
             <!-- NOVO TRECHO: Formulário para Adicionar Novo Vídeo -->
             <div style="background-color: #f9f9f9; border: 1px solid #e0e0e0; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
-                <h3><?php esc_html_e('Adicionar Novo Vídeo Manualmente', 'yt-player-custom'); ?></h3>
+                <h3><?php esc_html_e('Adicionar Novo Vídeo Manualmente', 'converttize'); ?></h3>
                 <form id="converttize-add-video-form" method="post" action="">
                     <table class="form-table">
                         <tbody>
                             <tr>
                                 <th scope="row">
-                                    <label for="video_title"><?php esc_html_e('Título do Vídeo', 'yt-player-custom'); ?></label>
+                                    <label for="video_title"><?php esc_html_e('Título do Vídeo', 'converttize'); ?></label>
                                 </th>
                                 <td>
-                                    <input type="text" name="video_title" id="video_title" class="regular-text" value="" placeholder="<?php esc_attr_e('Ex: Meu Primeiro Vídeo', 'yt-player-custom'); ?>" required />
-                                    <p class="description"><?php esc_html_e('Um título para identificar o vídeo na lista.', 'yt-player-custom'); ?></p>
+                                    <input type="text" name="video_title" id="video_title" class="regular-text" value="" placeholder="<?php esc_attr_e('Ex: Meu Primeiro Vídeo', 'converttize'); ?>" required />
+                                    <p class="description"><?php esc_html_e('Um título para identificar o vídeo na lista.', 'converttize'); ?></p>
                                 </td>
                             </tr>
                             <tr>
                                 <th scope="row">
-                                    <label for="video_url"><?php esc_html_e('ID ou Link do YouTube', 'yt-player-custom'); ?></label>
+                                    <label for="video_url"><?php esc_html_e('ID ou Link do YouTube', 'converttize'); ?></label>
                                 </th>
                                 <td>
                                     <!-- CORRIGIDO: placeholder com exemplos de URL de vídeo simplificados e corretos -->
-                                    <input type="text" name="video_url" id="video_url" class="regular-text" value="" placeholder="<?php esc_attr_e('Ex: OdlSHPGg7Ag ou <div className="video-container mb-3"><iframe width="100%" height="315" src="https://www.youtube.com/embed/17548" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>', 'yt-player-custom'); ?>" required />
-                                    <p class="description"><?php esc_html_e('Insira o ID do vídeo do YouTube (ex: C7OQHIpDlvA) ou o link completo do vídeo.', 'yt-player-custom'); ?></p>
+                                    <input type="text" name="video_url" id="video_url" class="regular-text" value="" placeholder="<?php esc_attr_e('Ex: OdlSHPGg7Ag ou <div className="video-container mb-3"><iframe width="100%" height="315" src="https://www.youtube.com/embed/17548" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>', 'converttize'); ?>" required />
+                                    <p class="description"><?php esc_html_e('Insira o ID do vídeo do YouTube (ex: C7OQHIpDlvA) ou o link completo do vídeo.', 'converttize'); ?></p>
                                 </td>
                             </tr>
                         </tbody>
@@ -380,7 +380,7 @@ class YT_Custom_Player_Plugin {
                         <input type="hidden" name="action" value="converttize_add_new_video">
                         <input type="hidden" name="nonce" value="<?php echo wp_create_nonce('converttize_add_new_video_nonce'); ?>">
                         <button type="submit" name="submit" id="submit-add-video" class="button button-primary">
-                            <?php esc_html_e('Adicionar Vídeo', 'yt-player-custom'); ?>
+                            <?php esc_html_e('Adicionar Vídeo', 'converttize'); ?>
                         </button>
                     </p>
                     <div id="add-video-status" style="margin-top:10px; display:none;"></div>
@@ -392,9 +392,9 @@ class YT_Custom_Player_Plugin {
             <table class="wp-list-table widefat fixed striped" id="converttize-video-list-table">
                 <thead>
                     <tr>
-                        <th scope="col" class="manage-column column-video-id"><?php esc_html_e('ID do Vídeo', 'yt-player-custom'); ?></th>
-                        <th scope="col" class="manage-column column-video-title"><?php esc_html_e('Título do Vídeo', 'yt-player-custom'); ?></th>
-                        <th scope="col" class="manage-column column-actions"><?php esc_html_e('Ações', 'yt-player-custom'); ?></th>
+                        <th scope="col" class="manage-column column-video-id"><?php esc_html_e('ID do Vídeo', 'converttize'); ?></th>
+                        <th scope="col" class="manage-column column-video-title"><?php esc_html_e('Título do Vídeo', 'converttize'); ?></th>
+                        <th scope="col" class="manage-column column-actions"><?php esc_html_e('Ações', 'converttize'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -405,27 +405,27 @@ class YT_Custom_Player_Plugin {
                             <?php 
                                 // MODIFICADO: Busca o título personalizado salvo, ou exibe 'Não disponível'
                                 $custom_title = get_option('converttize_video_title_' . $video->video_id);
-                                $display_title = $custom_title ? $custom_title : __('Título não disponível', 'yt-player-custom');
+                                $display_title = $custom_title ? $custom_title : __('Título não disponível', 'converttize');
                                 // Adicionada classe 'editable-title' e o span para o JS interagir
                                 echo '<span class="editable-title">' . esc_html($display_title) . '</span>';
                             ?>
                         </td>
                         <td>
                             <a href="<?php echo esc_url(admin_url('admin.php?page=' . self::ANALYTICS_PAGE_SLUG . '&video_id=' . $video->video_id)); ?>" class="button button-primary">
-                                <?php esc_html_e('Ver Analytics', 'yt-player-custom'); ?>
+                                <?php esc_html_e('Ver Analytics', 'converttize'); ?>
                             </a>
                             <?php // NOVO BOTÃO DE EDIÇÃO POR VÍDEO ?>
                             <a href="<?php echo esc_url(admin_url('admin.php?page=' . self::SETTINGS_PAGE_SLUG . '&video_id=' . $video->video_id)); ?>" class="button button-secondary" style="margin-left: 5px;">
-                                <?php esc_html_e('Editar Configurações', 'yt-player-custom'); ?>
+                                <?php esc_html_e('Editar Configurações', 'converttize'); ?>
                             </a>
                             <!-- NOVO BOTÃO DE EXCLUSÃO - Lixeira Vermelha -->
                             <button type="button" class="button button-delete button-icon"
                                     data-video-id="<?php echo esc_attr($video->video_id); ?>"
                                     style="background-color: #dc3232; color: #fff; border-color: #dc3232; margin-left: 5px;"
-                                    title="<?php esc_attr_e('Excluir Vídeo', 'yt-player-custom'); ?>"
+                                    title="<?php esc_attr_e('Excluir Vídeo', 'converttize'); ?>"
                                     onclick="converttizeDeleteVideo('<?php echo esc_js($video->video_id); ?>', this)">
                                 <span class="dashicons dashicons-trash"></span>
-                                <?php esc_html_e('', 'yt-player-custom'); // Adicionado o texto "Excluir" ?>
+                                <?php esc_html_e('', 'converttize'); // Adicionado o texto "Excluir" ?>
                             </button>
                             <!-- FIM NOVO TRECHO -->
                         </td>
@@ -435,7 +435,7 @@ class YT_Custom_Player_Plugin {
             </table>
             <?php else : ?>
                 <div class="notice notice-info">
-                    <p><?php esc_html_e('Nenhum dado de analytics de vídeo encontrado ainda. Comece adicionando um vídeo acima ou certificando-se de que seus vídeos estão sendo assistidos com o player Converttize para que os dados sejam coletados.', 'yt-player-custom'); ?></p>
+                    <p><?php esc_html_e('Nenhum dado de analytics de vídeo encontrado ainda. Comece adicionando um vídeo acima ou certificando-se de que seus vídeos estão sendo assistidos com o player Converttize para que os dados sejam coletados.', 'converttize'); ?></p>
                 </div>
             <?php endif; ?>
         </div>
@@ -444,14 +444,14 @@ class YT_Custom_Player_Plugin {
             // Função para lidar com a exclusão de vídeo via AJAX
             function converttizeDeleteVideo(videoId, buttonElement) {
                 // 1. Confirmação do Usuário
-                if ( ! confirm('<?php echo esc_js(__('Tem certeza que deseja excluir o vídeo "' . 'ID: ' . '%s' . '" e todos os seus dados de analytics e configurações específicas?', 'yt-player-custom')); ?>'.replace('%s', videoId)) ) {
+                if ( ! confirm('<?php echo esc_js(__('Tem certeza que deseja excluir o vídeo "' . 'ID: ' . '%s' . '" e todos os seus dados de analytics e configurações específicas?', 'converttize')); ?>'.replace('%s', videoId)) ) {
                     return; // Aborta se o usuário cancelar
                 }
 
                 // Desabilitar o botão e mostrar um feedback visual
                 buttonElement.disabled = true;
                 const originalButtonText = buttonElement.innerHTML;
-                buttonElement.innerHTML = '<span class="dashicons dashicons-update spin"></span> <?php echo esc_js(__('Excluir...', 'yt-player-custom')); ?>';
+                buttonElement.innerHTML = '<span class="dashicons dashicons-update spin"></span> <?php echo esc_js(__('Excluir...', 'converttize')); ?>';
 
                 // Criar o nonce para a requisição AJAX
                 const nonce = '<?php echo wp_create_nonce('converttize_delete_video_nonce'); ?>';
@@ -485,7 +485,7 @@ class YT_Custom_Player_Plugin {
                             row.remove();
                         }
                     } else {
-                        alert('<?php echo esc_js(__('Erro ao excluir o vídeo:', 'yt-player-custom')); ?> ' + (result.data.message || ''));
+                        alert('<?php echo esc_js(__('Erro ao excluir o vídeo:', 'converttize')); ?> ' + (result.data.message || ''));
                         // Restaurar o botão em caso de erro
                         buttonElement.disabled = false;
                         buttonElement.innerHTML = originalButtonText;
@@ -493,7 +493,7 @@ class YT_Custom_Player_Plugin {
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('<?php echo esc_js(__('Ocorreu um erro inesperado ao tentar excluir o vídeo. Por favor, verifique o console do navegador para mais detalhes.', 'yt-player-custom')); ?>');
+                    alert('<?php echo esc_js(__('Ocorreu um erro inesperado ao tentar excluir o vídeo. Por favor, verifique o console do navegador para mais detalhes.', 'converttize')); ?>');
                     // Restaurar o botão em caso de erro de rede ou inesperado
                     buttonElement.disabled = false;
                     buttonElement.innerHTML = originalButtonText;
@@ -511,7 +511,7 @@ class YT_Custom_Player_Plugin {
                     const statusDiv = $('#add-video-status');
                     const originalButtonText = submitButton.html();
 
-                    submitButton.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> <?php esc_html_e('Adicionando...', 'yt-player-custom'); ?>');
+                    submitButton.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> <?php esc_html_e('Adicionando...', 'converttize'); ?>');
                     statusDiv.removeClass('notice notice-success notice-error').hide().html('');
 
                     $.ajax({
@@ -530,7 +530,7 @@ class YT_Custom_Player_Plugin {
                             }
                         },
                         error: function() {
-                            statusDiv.addClass('notice notice-error is-dismissible').html('<p><?php esc_html_e('Ocorreu um erro ao processar sua requisição.', 'yt-player-custom'); ?></p>').show();
+                            statusDiv.addClass('notice notice-error is-dismissible').html('<p><?php esc_html_e('Ocorreu um erro ao processar sua requisição.', 'converttize'); ?></p>').show();
                         },
                         complete: function() {
                             submitButton.prop('disabled', false).html(originalButtonText);
@@ -602,14 +602,14 @@ class YT_Custom_Player_Plugin {
                                     // Se a resposta incluir o título sanitizado, use-o
                                     // $span.text(response.data.new_title).show(); 
                                 } else {
-                                    alert('<?php echo esc_js(__('Erro ao atualizar título:', 'yt-player-custom')); ?> ' + (response.data.message || ''));
+                                    alert('<?php echo esc_js(__('Erro ao atualizar título:', 'converttize')); ?> ' + (response.data.message || ''));
                                     $span.text(currentTitle).show(); // Reverte para o título original
                                     $input.remove();
                                     $spinner.remove();
                                 }
                             },
                             error: function() {
-                                alert('<?php echo esc_js(__('Erro de conexão ao atualizar o título.', 'yt-player-custom')); ?>');
+                                alert('<?php echo esc_js(__('Erro de conexão ao atualizar o título.', 'converttize')); ?>');
                                 $span.text(currentTitle).show(); // Reverte para o título original
                                 $input.remove();
                                 $spinner.remove();
@@ -1122,7 +1122,7 @@ function lumeplayer_save_analytics() {
 
     global $wpdb;
 
-    $plugin_instance = YT_Custom_Player_Plugin::get_instance();
+    $plugin_instance = Converttize::get_instance();
     if (!$plugin_instance) {
         wp_send_json_error(['message' => 'Plugin instance not found']);
         return;
@@ -1243,13 +1243,13 @@ function converttize_delete_video_handler() {
 
     // 1. Verificação de Segurança e Permissões
     if ( ! current_user_can( 'manage_options' ) ) {
-        wp_send_json_error( ['message' => __('Permissão negada. Você não tem as permissões necessárias para realizar esta ação.', 'yt-player-custom')] );
+        wp_send_json_error( ['message' => __('Permissão negada. Você não tem as permissões necessárias para realizar esta ação.', 'converttize')] );
         wp_die(); // Sempre use wp_die() no final dos manipuladores AJAX
     }
 
     // Verificação de nonce para proteger contra requisições falsificadas (CSRF)
     if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash($_POST['nonce']) ), 'converttize_delete_video_nonce' ) ) {
-        wp_send_json_error( ['message' => __('Falha na verificação de segurança (nonce inválido).', 'yt-player-custom')] );
+        wp_send_json_error( ['message' => __('Falha na verificação de segurança (nonce inválido).', 'converttize')] );
         wp_die();
     }
 
@@ -1257,7 +1257,7 @@ function converttize_delete_video_handler() {
     $video_id = isset( $_POST['video_id'] ) ? sanitize_text_field( wp_unslash($_POST['video_id']) ) : '';
 
     if ( empty( $video_id ) ) {
-        wp_send_json_error( ['message' => __('ID do vídeo não fornecido.', 'yt-player-custom')] );
+        wp_send_json_error( ['message' => __('ID do vídeo não fornecido.', 'converttize')] );
         wp_die();
     }
 
@@ -1286,13 +1286,13 @@ function converttize_delete_video_handler() {
 
         // Verificar se houve erro nas operações que indicam falha real (ex: erro no delete do analytics)
         if ( $deleted_analytics === false ) { // $wpdb->delete() retorna false em caso de erro no SQL
-            throw new Exception(__('Erro ao deletar dados de analytics do vídeo.', 'yt-player-custom'));
+            throw new Exception(__('Erro ao deletar dados de analytics do vídeo.', 'converttize'));
         }
         
         $wpdb->query('COMMIT'); // Confirma a transação se tudo correu bem
 
         error_log("✅ CONVERTTIZE: Vídeo '$video_id' e seus dados deletados com sucesso. Analytics: " . ($deleted_analytics ? 'Dados removidos' : 'Nenhum dado de analytics encontrado/removido') . ", Opções: " . ($deleted_options ? 'Removido' : 'Não encontrado/Não removido'));
-        wp_send_json_success( ['message' => sprintf(__('Vídeo "%s" e seus dados foram excluídos com sucesso.', 'yt-player-custom'), $video_id)] );
+        wp_send_json_success( ['message' => sprintf(__('Vídeo "%s" e seus dados foram excluídos com sucesso.', 'converttize'), $video_id)] );
 
     } catch ( Exception $e ) {
         $wpdb->query('ROLLBACK'); // Reverte a transação em caso de erro
@@ -1314,12 +1314,12 @@ function converttize_add_new_video_handler() {
     global $wpdb;
 
     if (!current_user_can('manage_options')) {
-        wp_send_json_error(['message' => __('Permissão negada.', 'yt-player-custom')]);
+        wp_send_json_error(['message' => __('Permissão negada.', 'converttize')]);
         wp_die();
     }
 
     if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'converttize_add_new_video_nonce')) {
-        wp_send_json_error(['message' => __('Falha na verificação de segurança (nonce inválido).', 'yt-player-custom')] );
+        wp_send_json_error(['message' => __('Falha na verificação de segurança (nonce inválido).', 'converttize')] );
         wp_die();
     }
 
@@ -1330,11 +1330,11 @@ function converttize_add_new_video_handler() {
     $video_id = converttize_extract_youtube_id($video_url_raw); // Usa a função utilitária
 
     if (empty($video_id)) {
-        wp_send_json_error(['message' => __('ID ou link do vídeo YouTube inválido. Por favor, verifique.', 'yt-player-custom')]);
+        wp_send_json_error(['message' => __('ID ou link do vídeo YouTube inválido. Por favor, verifique.', 'converttize')]);
         wp_die();
     }
     if (empty($video_title)) {
-        $video_title = __('Sem Título', 'yt-player-custom'); // Título padrão se o usuário não fornecer
+        $video_title = __('Sem Título', 'converttize'); // Título padrão se o usuário não fornecer
     }
 
     $analytics_table = $wpdb->prefix . 'lumeplayer_analytics';
@@ -1353,9 +1353,9 @@ function converttize_add_new_video_handler() {
     ));
 
     if ($result === false) {
-        wp_send_json_error(['message' => __('Erro ao adicionar vídeo ao banco de dados. Tente novamente.', 'yt-player-custom')]);
+        wp_send_json_error(['message' => __('Erro ao adicionar vídeo ao banco de dados. Tente novamente.', 'converttize')]);
     } else {
-        wp_send_json_success(['message' => sprintf(__('Vídeo "%s" (ID: %s) adicionado com sucesso!', 'yt-player-custom'), $video_title, $video_id)]);
+        wp_send_json_success(['message' => sprintf(__('Vídeo "%s" (ID: %s) adicionado com sucesso!', 'converttize'), $video_title, $video_id)]);
     }
     wp_die();
 }
@@ -1372,13 +1372,13 @@ function converttize_update_video_title_handler() {
 
     // 1. Verificação de Segurança e Permissões
     if (!current_user_can('manage_options')) {
-        wp_send_json_error(['message' => __('Permissão negada.', 'yt-player-custom')]);
+        wp_send_json_error(['message' => __('Permissão negada.', 'converttize')]);
         return;
     }
 
     // Verificação de nonce
     if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'converttize_update_video_title_nonce')) {
-        wp_send_json_error(['message' => __('Falha na verificação de segurança (nonce inválido).', 'yt-player-custom')]);
+        wp_send_json_error(['message' => __('Falha na verificação de segurança (nonce inválido).', 'converttize')]);
         return;
     }
 
@@ -1387,7 +1387,7 @@ function converttize_update_video_title_handler() {
     $new_title = isset($_POST['new_title']) ? sanitize_text_field(wp_unslash($_POST['new_title'])) : ''; 
 
     if (empty($video_id)) {
-        wp_send_json_error(['message' => __('ID do vídeo não fornecido.', 'yt-player-custom')]);
+        wp_send_json_error(['message' => __('ID do vídeo não fornecido.', 'converttize')]);
         return;
     }
 
@@ -1396,7 +1396,7 @@ function converttize_update_video_title_handler() {
 
     if ($updated) {
         wp_send_json_success([
-            'message' => __('Título atualizado com sucesso!', 'yt-player-custom'),
+            'message' => __('Título atualizado com sucesso!', 'converttize'),
             'new_title' => $new_title // Envia o título sanitizado de volta para o JS
         ]);
     } else {
@@ -1404,12 +1404,12 @@ function converttize_update_video_title_handler() {
         // Se o valor não mudou, para o usuário é um sucesso, então verificamos se já era o mesmo.
         if (get_option('converttize_video_title_' . $video_id) === $new_title) {
             wp_send_json_success([
-                'message' => __('Nenhuma alteração no título detectada.', 'yt-player-custom'),
+                'message' => __('Nenhuma alteração no título detectada.', 'converttize'),
                 'new_title' => $new_title
             ]);
         } else {
             // Realmente falhou em atualizar por algum motivo
-            wp_send_json_error(['message' => __('Erro ao salvar o título. Tente novamente.', 'yt-player-custom')]);
+            wp_send_json_error(['message' => __('Erro ao salvar o título. Tente novamente.', 'converttize')]);
         }
     }
 
@@ -1417,12 +1417,29 @@ function converttize_update_video_title_handler() {
 }
 // FIM NOVO TRECHO: Hook AJAX para atualizar título do vídeo
 
+if ( ! class_exists( 'Puc_v4_Factory' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'vendor/plugin-update-checker/plugin-update-checker.php';
+}
+
+// URL do seu script de atualização no servidor intermediário.
+// SUBSTITUA ESTE URL PELA URL REAL DO SEU SCRIPT DE PROXY NO FUTURO!
+// Ex: 'https://seusite.com/atualizacoes-converttize/index.php'
+$update_server_url = $update_server_url = 'https://updates.converttize.com/index.php?slug=converttize-player';
+
+// O terceiro parâmetro deve ser um SLUG único para o seu plugin.
+// Use algo como o Text Domain do seu plugin para consistência.
+$myUpdateChecker = Puc_v4_Factory::buildUpdateChecker(
+    $update_server_url,
+    __FILE__, // Caminho para o arquivo principal do plugin
+    'converttize-player' // SLUG único do plugin. Use o mesmo na URL acima!
+);
+
 // Instancia a classe principal do plugin
 // É crucial que esta instância seja armazenada globalmente para ser acessível aos callbacks
 global $converttize_main_plugin_instance;
-$converttize_main_plugin_instance = new YT_Custom_Player_Plugin();
+$converttize_main_plugin_instance = new Converttize();
 
-// A instância de YT_License_Manager já é criada dentro do construtor de YT_Custom_Player_Plugin.
+// A instância de YT_License_Manager já é criada dentro do construtor de Converttize.
 // Não é mais necessário instanciá-la globalmente aqui.
 // Removido:
 // global $converttize_license_manager;

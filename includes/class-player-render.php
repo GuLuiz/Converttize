@@ -289,7 +289,7 @@ class YT_Custom_Player_Render {
 
 // REMOVIDO: Este bloco de inicialização redundante que estava causando o erro
 // Porque YT_Player_Admin_Settings já é instanciada e globalizada corretamente
-// na classe YT_Custom_Player_Plugin (o arquivo principal do plugin).
+// na classe Converttize (o arquivo principal do plugin).
 /*
 global $ytp_admin_settings_instance;
 if (!($ytp_admin_settings_instance instanceof YT_Player_Admin_Settings)) {
