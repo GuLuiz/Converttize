@@ -104,11 +104,11 @@ html {
     
     text-align: center;
     color: var(--ytp-text-color);
-    z-index: 999999 !important; /* Z-index para garantir que esteja acima de outros elementos */
-    cursor: pointer;
+    z-index: 999997 !important; /* ALTERADO: Z-index para ficar abaixo do click-catcher */
+    cursor: default; /* ALTERADO: Cursor padrão, pois não deve ser clicável diretamente */
     animation: fadeIn 0.8s ease-out;
     user-select: none;
-    pointer-events: auto; /* Permite cliques */
+    pointer-events: none; /* ALTERADO: Não captura cliques, passa para o elemento abaixo */
 
     display: flex; /* Para centralizar o conteúdo interno */
     justify-content: center;
@@ -149,16 +149,16 @@ html {
     border-radius: 0.75rem; /* Restored border-radius */
     box-shadow: transparent; /* Remains transparent */
 
-    z-index: 999999 !important; /* High z-index */
+    z-index: 999997 !important; /* ALTERADO: Z-index para ficar abaixo do click-catcher */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     color: var(--ytp-text-color);
-    cursor: pointer;
+    cursor: default; /* ALTERADO: Cursor padrão, pois não deve ser clicável diretamente */
     transition: opacity 0.3s ease;
     opacity: 1;
-    pointer-events: auto; /* Allows this overlay to be clickable */
+    pointer-events: none; /* ALTERADO: Não captura cliques, passa para o elemento abaixo */
     user-select: none;
     animation: fadeIn 0.8s ease-out;
 }
@@ -183,7 +183,7 @@ html {
     width: 100%;
     height: 100%;
     background: transparent; /* Completamente invisível */
-    z-index: 999998; /* Acima do iframe (z-index padrão do iframe é geralmente baixo), mas abaixo dos overlays visíveis */
+    z-index: 999999 !important; /* ALTERADO: Z-index mais alto para garantir a captura do clique */
     display: none; /* Escondido por padrão, controlado pelo JS */
     pointer-events: auto; /* Permite que capture cliques */
     cursor: pointer; /* Adicionado: Altera o cursor para indicar que a área é clicável */

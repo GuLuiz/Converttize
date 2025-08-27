@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Converttize
  * Description: Player minimalista com UX fluida, botões próprios e desbloqueio inteligente.
- * Version: 1.0.3
+ * Version: 1.0.5
  * Author: IGL Solutions
  * Text Domain: converttize 
  */
