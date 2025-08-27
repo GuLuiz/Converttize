@@ -10,8 +10,84 @@
 
     let pageHasActiveUnlockController = null;
 
-    // REMOVIDO: const SECURITY_SECRET = 'CONV_SEC_2024_XYZ789'; // ESTA LINHA FOI REMOVIDA
-    // REMOVIDO: SHA256 function is also removed as it's no longer needed client-side.
+    // --- VARIÁVEIS E FUNÇÕES GLOBAIS PARA CONTROLE DE LISTENERS ---
+    // Essas variáveis e funções são definidas uma vez e usadas por todas as instâncias do player.
+    let handlePlayButtonClickRef = null;
+    let handlePauseButtonClickRef = null;
+    let handleContainerClickRef = null;
+
+    const attachPlayerListeners = (player, container, features, playBtnCustom, pauseBtnCustom) => {
+        // Atacha listeners para os botões customizados de Play/Pause
+        if (features.enable_play_pause_buttons) {
+            if (playBtnCustom && !handlePlayButtonClickRef) {
+                handlePlayButtonClickRef = (event) => {
+                    event.stopPropagation();
+                    if (playersState[container.id.replace('_container', '')]) playersState[container.id.replace('_container', '')].wasPausedByVisibilityChange = false;
+                    if (player.isMuted() || playersState[container.id.replace('_container', '')].initialAutoplayMuted) {
+                        player.unMute();
+                        playersState[container.id.replace('_container', '')].initialAutoplayMuted = false;
+                    }
+                    player.playVideo();
+                    updatePlayPauseButtons(container, true, features);
+                };
+                playBtnCustom.addEventListener('click', handlePlayButtonClickRef);
+            }
+            if (pauseBtnCustom && !handlePauseButtonClickRef) {
+                handlePauseButtonClickRef = (event) => {
+                    event.stopPropagation();
+                    if (playersState[container.id.replace('_container', '')]) playersState[container.id.replace('_container', '')].wasPausedByVisibilityChange = false;
+                    player.pauseVideo();
+                    updatePlayPauseButtons(container, false, features);
+                };
+                pauseBtnCustom.addEventListener('click', handlePauseButtonClickRef);
+            }
+        }
+        // Atacha listener para o clique na área do container (quando botões customizados estão desativados e chrome oculto)
+        else if (features.hide_chrome) {
+            if (!handleContainerClickRef) {
+                handleContainerClickRef = (event) => {
+                    // Garante que o clique não é em nenhum overlay ativo ou botão customizado
+                    const isOverlayClick = event.target.closest('.ytp-sound-overlay');
+                    const isMutedAutoplayOverlayClick = event.target.closest('.ytp-muted-autoplay-overlay');
+                    const isCustomButton = event.target.closest('.ytp-btn') ||
+                                        event.target.closest('.ytp-replay-btn') ||
+                                        event.target.closest('.ytp-startover-btn') ||
+                                        event.target.closest('.ytp-ended-btn');
+
+                    if (!isOverlayClick && !isMutedAutoplayOverlayClick && !isCustomButton) {
+                        if (player.isMuted() || playersState[container.id.replace('_container', '')].initialAutoplayMuted) {
+                            player.unMute();
+                            playersState[container.id.replace('_container', '')].initialAutoplayMuted = false;
+                            player.playVideo();
+                        } else {
+                            if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                                player.pauseVideo();
+                            } else {
+                                player.playVideo();
+                            }
+                        }
+                    }
+                };
+                container.addEventListener('click', handleContainerClickRef, true); // Usa fase de captura
+            }
+        }
+    };
+
+    const detachPlayerListeners = (container, playBtnCustom, pauseBtnCustom) => {
+        if (playBtnCustom && handlePlayButtonClickRef) {
+            playBtnCustom.removeEventListener('click', handlePlayButtonClickRef);
+            handlePlayButtonClickRef = null;
+        }
+        if (pauseBtnCustom && handlePauseButtonClickRef) {
+            pauseBtnCustom.removeEventListener('click', handlePauseButtonClickRef);
+            handlePauseButtonClickRef = null; // CORRIGIDO: Este era o erro, estava handlePlayButtonClickRef = null
+        }
+        if (container && handleContainerClickRef) {
+            container.removeEventListener('click', handleContainerClickRef, true);
+            handleContainerClickRef = null;
+        }
+    };
+    // --- FIM DAS VARIÁVEIS E FUNÇÕES GLOBAIS PARA CONTROLE DE LISTENERS ---
 
 
     // --- LÓGICA DE INICIALIZAÇÃO ROBUSTA E SEGURA ---
@@ -67,7 +143,7 @@
             globalConfig = window.ytpGlobalPluginConfig;
             licenseStatus = globalConfig.license_status || 'inactive';
             securityToken = globalConfig.security_hash || null;
-            
+
             // CORRIGIDO: validateIntegrity agora apenas verifica a existência dos dados
             if (!validateIntegrity()) {
                 console.warn('[CONVERTTIZE-INIT] Configuração de integridade da licença incompleta. Revertendo para status padrão: inactive.');
@@ -101,7 +177,7 @@
                 }
             } else {
                 console.log('[CONVERTTIZE-INIT] Players inicializados com sucesso, limpando intervalo de retentativas de wrappers.');
-                clearInterval(initializationInterval); 
+                clearInterval(initializationInterval);
             }
         } else if (isInitialized) {
             clearInterval(initializationInterval);
@@ -117,7 +193,7 @@
         }
 
         const wrappers = document.querySelectorAll('.ytp-wrapper');
-        
+
         if (wrappers.length > 0) {
             initializePlayers(wrappers);
             isInitialized = true;
@@ -146,7 +222,7 @@
             renderPlayerByLicenseStatus(wrapper, uid, playerData);
         });
     }
-    
+
     // Exibe uma mensagem de erro geral em todos os wrappers de player
     function displayGeneralInitializationError(message) {
         $('.ytp-wrapper').each(function() {
@@ -168,16 +244,6 @@
     }
     // --- FIM DA LÓGICA DE INICIALIZAÇÃO ROBUSTA E SEGURA ---
 
-    // REMOVIDO: A implementação da função sha256 foi removida.
-
-    // CORRIGIDO: validateIntegrity() agora apenas verifica se os dados necessários existem.
-    // A validação criptográfica real do hash deve ocorrer SOMENTE no servidor.
-    function validateIntegrity() {
-        if (!globalConfig) return false;
-        // Basta verificar se o hash e o status que vieram do servidor existem.
-        // A segurança está no PHP validar o hash com seu segredo.
-        return typeof globalConfig.security_hash === 'string' && typeof globalConfig.license_status === 'string';
-    }
 
     // Função de Easing: Começa rápida e desacelera na parte final.
     function easeOutCubic(t) {
@@ -212,15 +278,15 @@
         else {
             const remainingDuration = duration - TRANSITION_TIME_SECONDS;
             const currentSegmentTime = currentTime - TRANSITION_TIME_SECONDS;
-            
+
             const t_segment_normalized = currentSegmentTime / remainingDuration;
-            
+
             const remainingBarPercent = 1 - TARGET_PERCENT_BAR;
-            
+
             // Aplica easeOutCubic para esta fase. Começa mais rápida e desacelera
             // mais na parte final do segmento, que atende ao "desacelerar do meio pro final".
             const perceivedProgressInSegment = remainingBarPercent * easeOutCubic(t_segment_normalized);
-            
+
             // Soma o percentual já preenchido da barra (30%) com o progresso na fase 2
             return TARGET_PERCENT_BAR + perceivedProgressInSegment;
         }
@@ -235,20 +301,22 @@
     function applyColorsToPlayer(playerId, colors) {
         const container = document.getElementById(playerId + '_container');
         if (!container || !colors) return;
-        
+
         Object.keys(colors).forEach(key => {
             const cssVar = '--ytp-' + key.replace('_', '-');
             container.style.setProperty(cssVar, colors[key]);
         });
-        
+
         const primaryRgb = hexToRgb(colors.primary_color || '#ff9500');
         if (primaryRgb) {
             container.style.setProperty('--ytp-primary-color-rgb', `${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}`);
         }
-        
+
         const overlay = container.querySelector('.ytp-sound-overlay');
+
+        const endedOverlay = container.querySelector('.ytp-video-ended-overlay');
         const playerData = window['ytpData_' + playerId]; // Get playerData to access features/texts
-        
+
         if (overlay && playerData && playerData.features) {
             overlay.style.background = colors.overlay_bg || 'rgba(0,0,0,0.75)';
             overlay.style.color = colors.text_color || '#ffffff';
@@ -259,14 +327,13 @@
             if (soundClickElement) soundClickElement.textContent = playerData.features.sound_overlay_click || 'Clique para ouvir';
         }
 
-        const endedOverlay = container.querySelector('.ytp-video-ended-overlay');
         if (endedOverlay && playerData && playerData.features) {
             endedOverlay.style.background = '#000000 !important';
             endedOverlay.style.color = colors.text_color || '#ffffff';
-            
+
             const endedMessageElement = endedOverlay.querySelector('.ytp-ended-message');
             if (endedMessageElement) endedMessageElement.textContent = playerData.features.ended_overlay_message || 'Vídeo finalizado';
-            
+
             const endedButtons = endedOverlay.querySelectorAll('.ytp-ended-btn');
             endedButtons.forEach(btn => {
                 btn.style.background = colors.primary_color || '#ff9500';
@@ -276,7 +343,7 @@
                 }
             });
         }
-        
+
         const buttons = container.querySelectorAll('.ytp-btn');
         buttons.forEach(btn => {
             btn.style.color = colors.text_color || '#ffffff';
@@ -284,7 +351,7 @@
     }
 
     function hexToRgb(hex) {
-        const result = /^#?([a-f\\\d]{2})([a-f\\\d]{2})([a-f\\\d]{2})$/i.exec(hex);
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         return result ? {
             r: parseInt(result[1], 16),
             g: parseInt(result[2], 16),
@@ -292,23 +359,14 @@
         } : null;
     }
 
-    // REMOVIDO: generateSecurityHash (não é mais necessário client-side)
-    /*
-    function generateSecurityHash(status) {
-        const today = new Date().toISOString().split('T')[0];
-        const data = status + SECURITY_SECRET + today;
-        return sha256(data).substring(0, 16);
-    }
-    */
-
     // CORRIGIDO: validateIntegrity() agora apenas verifica se o globalConfig e suas propriedades de segurança existem.
     // A validação criptográfica real do hash ocorre SOMENTE no servidor (no PHP).
     function validateIntegrity() {
         // Verifica se o objeto de configuração global e o security_hash e license_status vieram do servidor.
         // O player.js CONFIA que o PHP gerou o security_hash corretamente usando o segredo.
-        return typeof globalConfig !== 'undefined' && 
+        return typeof globalConfig !== 'undefined' &&
                globalConfig !== null &&
-               typeof globalConfig.security_hash === 'string' && 
+               typeof globalConfig.security_hash === 'string' &&
                typeof globalConfig.license_status === 'string';
     }
 
@@ -317,18 +375,18 @@
             const daysRemaining = config.trial_days_remaining || 0;
             return true;
         }
-        
+
         if (config.license_status === 'trial_expired') {
             showTrialExpiredMessage(config.purchase_url);
             return false;
         }
-        
+
         return config.license_status === 'active';
     }
 
     function showTrialWarning(daysRemaining, purchaseUrl) {
         if (document.getElementById('converttize-trial-warning')) return;
-        
+
         const warning = document.createElement('div');
         warning.id = 'converttize-trial-warning';
         warning.style.cssText = `
@@ -354,20 +412,20 @@
                 ${daysRemaining === 0 ? 'Expira hoje!' : `${daysRemaining} dias restantes`}
             </div>
             <div style="display: flex; gap: 10px;">
-                <a href="${purchaseUrl || '#'}" 
-                   style="background: rgba(255,255,255,0.2); color: white; padding: 8px 12px; 
+                <a href="${purchaseUrl || '#'}"
+                   style="background: rgba(255,255,255,0.2); color: white; padding: 8px 12px;
                           text-decoration: none; border-radius: 4px; font-size: 12px; flex: 1; text-align: center;"
                    >
                     🛒 Adquirir
                 </a>
-                <button onclick="this.parentElement.parentElement.remove()" 
-                        style="background: rgba(255,255,255,0.2); color: white; border: none; 
+                <button onclick="this.parentElement.parentElement.remove()"
+                        style="background: rgba(255,255,255,0.2); color: white; border: none;
                                padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
                     ✕
                 </button>
             </div>
         `;
-        
+
         const style = document.createElement('style');
         style.textContent = `
             @keyframes slideIn {
@@ -376,9 +434,9 @@
             }
         `;
         document.head.appendChild(style);
-        
+
         document.body.appendChild(warning);
-        
+
         setTimeout(() => {
             if (warning.parentNode) {
                 warning.style.animation = 'slideIn 0.5s ease-out reverse';
@@ -409,15 +467,15 @@
         message.innerHTML = `
             <div style="display: flex; align-items: center;">
                 <span style="margin-right: 8px;">⏰</span>
-                Trial expirado - 
+                Trial expirado -
                 <a href="${purchaseUrl || '#'}" style="color: white; margin-left: 5px;">
                     Adquirir licença
                 </a>
             </div>
         `;
-        
+
         document.body.appendChild(message);
-        
+
         setTimeout(() => {
             if (message.parentNode) {
                 message.parentNode.removeChild(message);
@@ -438,7 +496,7 @@
 
     function renderPlayerByLicenseStatus(wrapper, uid, playerData) {
         const canUseCustomPlayer = handleTrialStatus(globalConfig || {});
-        
+
         if (licenseStatus === 'active' || (canUseCustomPlayer && licenseStatus === 'trial')) {
             renderCustomPlayer(wrapper, uid, playerData);
         } else {
@@ -448,14 +506,14 @@
 
     function renderCustomPlayer(wrapper, uid, playerData) {
         let playerElement = document.getElementById(uid);
-        
+
         if (!playerElement || playerElement.tagName !== 'IFRAME') {
             playerElement = wrapper.querySelector('.ytp-iframe');
             if (!playerElement) {
                 playerElement = document.getElementById(uid);
             }
         }
-        
+
         const player = new YT.Player(playerElement, {
             videoId: playerData.video_id,
             playerVars: {
@@ -486,17 +544,17 @@
     }
 
     function renderBasicYouTubePlayer(wrapper, uid, playerData) {
-        const statusText = licenseStatus === 'trial_expired' ? 
+        const statusText = licenseStatus === 'trial_expired' ?
             '⏰ Trial Expirado' : '⚠️ Licença Necessária';
-            
+
         wrapper.innerHTML = `
             <div class="converttize-basic-player">
-                <iframe 
-                    width="100%" 
-                    height="315" 
-                    src="https://www.youtube.com/embed/${playerData.video_id}?rel=0&modestbranding=1&autoplay=1" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                <iframe
+                    width="100%"
+                    height="315"
+                    src="https://www.youtube.com/embed/${playerData.video_id}?rel=0&modestbranding=1&autoplay=1"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen>
                 </iframe>
                 <div class="converttize-status-indicator">
@@ -545,7 +603,7 @@
         if (licenseStatus !== 'active' && licenseStatus !== 'trial') {
             return;
         }
-        
+
         if (!analyticsData || !globalConfig || !globalConfig.ajax_url) {
             return;
         }
@@ -571,7 +629,7 @@
             watch_data: JSON.stringify(watchData),
             nonce: globalConfig.nonce,
             // security_token é o security_hash que veio do servidor, ele é o que assina os dados.
-            security_token: securityToken 
+            security_token: securityToken
         };
 
         $.post(globalConfig.ajax_url, postData)
@@ -594,6 +652,14 @@
         const progressBar = container.querySelector('.ytp-progress-bar');
         const playBtnCustom = container.querySelector('.ytp-play');
         const pauseBtnCustom = container.querySelector('.ytp-pause');
+        const unmuteButtonOverlay = container.querySelector('.ytp-muted-autoplay-overlay');
+        const ytpControls = container.querySelector('.ytp-controls'); // Get reference to the controls div
+
+
+        // NEW: Create the click catcher overlay
+        const ytpClickCatcher = document.createElement('div');
+        ytpClickCatcher.className = 'ytp-click-catcher-overlay';
+        container.appendChild(ytpClickCatcher);
 
 
         const playerData = window['ytpData_' + playerId];
@@ -611,7 +677,7 @@
             delayedItemsState: [],
             unlockHandlerCalled: false,
             wasPausedByVisibilityChange: false,
-            initialAutoplayMuted: false 
+            initialAutoplayMuted: false
         };
 
         viewData[playerId] = {
@@ -622,8 +688,8 @@
             lastTimeForDelta: 0
         };
 
-        const thisPlayerWantsToUnlock = (typeof features.unlock_after !== 'undefined' && features.unlock_after > 0) || 
-                                        (features.delayed_items && features.delayed_items.some(item => item.time > 0));
+        const thisPlayerWantsToUnlock = (typeof features.unlock_after !== 'undefined' && features.unlock_after > 0) ||
+            (features.delayed_items && features.delayed_items.some(item => item.time > 0));
 
         if (thisPlayerWantsToUnlock) {
             if (pageHasActiveUnlockController === null) {
@@ -639,42 +705,63 @@
             player.setOption("captions", "track", {});
         }
         catch (e) {
-             console.warn(`[CONVERTTIZE] Erro ao tentar manipular legendas: ${e.message}. Verifique a API do YouTube.`);
+            console.warn(`[CONVERTTIZE] Erro ao tentar manipular legendas: ${e.message}. Verifique a API do YouTube.`);
         }
 
 
         const iframe = container.querySelector('.ytp-iframe iframe');
-        if (iframe && features.hide_chrome) {
-            iframe.style.pointerEvents = 'none';
-        } else if (iframe) {
-            iframe.style.pointerEvents = 'auto'; 
+        // Oculta completamente o iframe e o torna não clicável quando um overlay for exibido
+        // Será re-ativado pelo código do overlay ao ser clicado.
+        if (iframe) {
+            iframe.style.visibility = 'visible'; // Default visibility
+            iframe.style.pointerEvents = 'auto'; // Default to auto
         }
 
-        if (overlay) {
+
+        // --- INÍCIO DA LÓGICA DE CONTROLE DE INTERAÇÕES ---
+        // Desanexa os listeners inicialmente para prevenir interação enquanto o overlay está presente
+        // Passa as referências dos elementos que podem ter listeners.
+        detachPlayerListeners(container, playBtnCustom, pauseBtnCustom);
+
+
+        // No bloco que exibe o Sound Overlay:
+        if (overlay && features.enable_sound_overlay) { // Sound Overlay está ativo e habilitado
             player.mute();
-            overlay.style.display = 'flex';
-              console.log(`[CONVERTTIZE-DEBUG] Overlay visível. Estado atual (onPlayerReady): ${player.getPlayerState()}`);
+            overlay.style.display = 'flex'; // Show visible overlay
+            ytpClickCatcher.style.display = 'block'; // Show invisible click catcher
 
-              if (player.getPlayerState() === -1) {
-            console.warn('[CONVERTTIZE-DEBUG] Player em estado UNSTARTED. Tentando comando playVideo() atrasado.');
-            setTimeout(() => {
-                player.playVideo();
-                console.log(`[CONVERTTIZE-DEBUG] Player estado após playVideo() atrasado: ${player.getPlayerState()}`);
-            }, 10); // Ajustado para 10ms conforme sua solicitação
-        }
+            // Oculta controles customizados E torna o iframe não clicável
+            if (ytpControls) {
+                ytpControls.style.display = 'none'; // Hide the play/pause buttons
+            }
+            if (iframe) {
+                iframe.style.pointerEvents = 'none'; // Make iframe unclickable
+            }
 
-            overlay.addEventListener('click', (event) => {
+            console.log(`[CONVERTTIZE-DEBUG] Overlay visível. Estado atual (onPlayerReady): ${player.getPlayerState()}`);
+
+            if (player.getPlayerState() === -1) {
+                console.warn('[CONVERTTIZE-DEBUG] Player em estado UNSTARTED. Tentando comando playVideo() atrasado.');
+                setTimeout(() => {
+                    player.playVideo();
+                    console.log(`[CONVERTTIZE-DEBUG] Player estado após playVideo() atrasado: ${player.getPlayerState()}`);
+                }, 10);
+            }
+
+            // Click listener on the invisible click catcher
+            ytpClickCatcher.addEventListener('click', (event) => {
                 event.stopPropagation();
                 console.log(`[CONVERTTIZE-OVERLAY] Clique no overlay para player ${playerId} detectado.`);
-                
-                // Remove qualquer erro de runtime anterior
-                container.querySelector('.converttize-runtime-error')?.remove();
-                container.querySelector('.ytp-iframe').style.visibility = 'visible'; // Restaura visibilidade do iframe
 
-                // Tenta voltar ao início (seekTo(0)) e desmutar o player.
+                container.querySelector('.converttize-runtime-error')?.remove();
+                // iframe.style.visibility já está 'visible' por padrão, apenas reativa pointer-events.
+                if (iframe) {
+                    iframe.style.pointerEvents = 'auto'; // Make iframe clickable again
+                }
+
                 player.seekTo(0);
                 player.unMute();
-                
+
                 let checkAttempts = 0;
                 const maxCheckAttempts = 20; // Check for up to 2 seconds (20 * 100ms)
                 const checkInterval = setInterval(() => {
@@ -683,91 +770,89 @@
 
                     if (state === YT.PlayerState.PLAYING) {
                         clearInterval(checkInterval);
-                        overlay.style.display = 'none';
+                        overlay.style.display = 'none'; // Hide visible overlay
+                        ytpClickCatcher.style.display = 'none'; // Hide invisible click catcher
+                        // Mostra controles customizados
+                        if (ytpControls) {
+                            ytpControls.style.display = 'flex'; // Show the play/pause buttons
+                        }
                         updatePlayPauseButtons(container, true, features);
                         console.log(`[CONVERTTIZE-OVERLAY] Vídeo ${playerId} iniciado com sucesso.`);
+                        // Re-habilita interações do player após o overlay ser ocultado, passando as referências
+                        attachPlayerListeners(player, container, features, playBtnCustom, pauseBtnCustom);
                     } else if (checkAttempts >= maxCheckAttempts) {
                         clearInterval(checkInterval);
                         console.warn(`[CONVERTTIZE-OVERLAY] Falha ao iniciar vídeo ${playerId}. Estado final: ${state}.`);
-                        displayPlayerRuntimeError(
-                            playerId,
-                            "Falha ao iniciar o vídeo.",
-                            `O player não respondeu ao clique. Estado final: ${state}. Tente recarregar. (Erro: API_CLICK_FAIL_0)`,
-                            "API_CLICK_FAIL_0"
-                        );
+                        displayPlayerRuntimeError(playerId, "Falha ao iniciar o vídeo.", `O player não respondeu ao clique. Estado final: ${state}. Tente recarregar. (Erro: API_CLICK_FAIL_0)`, "API_CLICK_FAIL_0");
                     }
                     checkAttempts++;
-                }, 100); // Check every 100ms
-            });
-        } else {
+                }, 100);
+            }, { once: true }); // Use { once: true } to remove listener after first click
+        }
+        // Bloco que exibe o Overlay de Autoplay Mutado (se o Sound Overlay estiver desativado)
+        else if (unmuteButtonOverlay && !features.enable_sound_overlay) { // Overlay de Autoplay Mutado ativo (sound overlay desativado)
             player.mute();
             playersState[playerId].initialAutoplayMuted = true;
+            // Oculta controles customizados E torna o iframe não clicável
+            if (ytpControls) {
+                ytpControls.style.display = 'none'; // Hide the play/pause buttons
+            }
+            if (iframe) {
+                iframe.style.pointerEvents = 'none'; // Make iframe unclickable
+            }
+
             console.log(`[CONVERTTIZE-DEBUG] Tentando playVideo() mutado para player ${playerId}. Estado ANTES da chamada: ${player.getPlayerState()}`);
             player.playVideo();
-            console.log(`[CONVERTTIZE-DEBUG] player.playVideo() chamado para player ${playerId}`); // NOVO LOG
+            console.log(`[CONVERTTIZE-DEBUG] player.playVideo() chamado para player ${playerId}`);
             updatePlayPauseButtons(container, false, features);
-            const unmuteButtonOverlay = container.querySelector('.ytp-muted-autoplay-overlay');
-            if (unmuteButtonOverlay) {
-                if (!unmuteButtonOverlay.hasAttribute('data-listener-added')) {
-                    unmuteButtonOverlay.addEventListener('click', (event) => {
-                        event.stopPropagation();
-                        player.seekTo(0);
-                        player.unMute();
-                        player.playVideo();
-                        playersState[playerId].initialAutoplayMuted = false;
-                        unmuteButtonOverlay.style.display = 'none';
-                        updatePlayPauseButtons(container, true, features);
-                    }, { once: true });
-                    unmuteButtonOverlay.setAttribute('data-listener-added', 'true');
-                }
+
+            unmuteButtonOverlay.style.display = 'flex'; // Show visible overlay
+            ytpClickCatcher.style.display = 'block'; // Show invisible click catcher
+
+            if (!ytpClickCatcher.hasAttribute('data-listener-added')) { // Attach listener to click catcher
+                ytpClickCatcher.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    player.seekTo(0);
+                    player.unMute();
+                    player.playVideo();
+                    playersState[playerId].initialAutoplayMuted = false;
+                    unmuteButtonOverlay.style.display = 'none'; // Hide visible overlay
+                    ytpClickCatcher.style.display = 'none'; // Hide invisible click catcher
+                    // Mostra controles customizados
+                    if (ytpControls) {
+                        ytpControls.style.display = 'flex'; // Show the play/pause buttons
+                    }
+                    // iframe.style.visibility já está 'visible' por padrão, apenas reativa pointer-events.
+                    if (iframe) {
+                        iframe.style.pointerEvents = 'auto'; // Make iframe clickable again
+                    }
+                    updatePlayPauseButtons(container, true, features);
+                    // Re-habilita interações do player após o overlay ser ocultado, passando as referências
+                    attachPlayerListeners(player, container, features, playBtnCustom, pauseBtnCustom);
+                }, { once: true }); // Use { once: true }
+                ytpClickCatcher.setAttribute('data-listener-added', 'true');
             }
         }
+        // Bloco para quando nenhum overlay é necessário (player ativo desde o início)
+        else {
+            // Habilita interações do player imediatamente, passando as referências
+            attachPlayerListeners(player, container, features, playBtnCustom, pauseBtnCustom);
+            // Ensure controls are visible by default if no overlay is needed
+            if (ytpControls) {
+                ytpControls.style.display = 'flex'; // Make sure they are visible
+            }
+            // iframe.style.visibility já está 'visible' por padrão, apenas reativa pointer-events.
+            if (iframe) {
+                iframe.style.pointerEvents = 'auto'; // Make iframe clickable again
+            }
+            ytpClickCatcher.style.display = 'none'; // Ensure click catcher is hidden
+        }
+        // --- FIM DA LÓGICA DE CONTROLE DE INTERAÇÕES ---
+
 
         if (playBtnCustom) playBtnCustom.title = features.play_button_title || 'Play';
         if (pauseBtnCustom) pauseBtnCustom.title = features.pause_button_title || 'Pause';
 
-        if (features.enable_play_pause_buttons) {
-            playBtnCustom.addEventListener('click', (event) => {
-                event.stopPropagation();
-                if (playersState[playerId]) playersState[playerId].wasPausedByVisibilityChange = false;
-                if (player.isMuted() || playersState[playerId].initialAutoplayMuted) {
-                    player.unMute();
-                    playersState[playerId].initialAutoplayMuted = false;
-                }
-                player.playVideo();
-                updatePlayPauseButtons(container, true, features);
-            });
-            
-            pauseBtnCustom.addEventListener('click', (event) => {
-                event.stopPropagation();
-                if (playersState[playerId]) playersState[playerId].wasPausedByVisibilityChange = false;
-                player.pauseVideo();
-                updatePlayPauseButtons(container, false, features);
-            });
-
-        } else if (features.hide_chrome) {
-            container.addEventListener('click', event => {
-                const isOverlayClick = event.target.closest('.ytp-sound-overlay');
-                const isCustomButton = event.target.closest('.ytp-btn') || 
-                                    event.target.closest('.ytp-replay-btn') || 
-                                    event.target.closest('.ytp-startover-btn') ||
-                                    event.target.closest('.ytp-ended-btn');
-                
-                if (!isOverlayClick && !isCustomButton) {
-                    if (player.isMuted() || playersState[playerId].initialAutoplayMuted) {
-                        player.unMute();
-                        playersState[playerId].initialAutoplayMuted = false;
-                        player.playVideo();
-                    } else {
-                        if (player.getPlayerState() === YT.PlayerState.PLAYING) {
-                            player.pauseVideo();
-                        } else {
-                            player.playVideo();
-                        }
-                    }
-                }
-            }, true);
-        }
 
         if (progressBar && features.enable_progress_bar) {
             progressBar.style.display = 'block';
@@ -784,7 +869,7 @@
         }
 
         container.addEventListener('keydown', event => {
-            if (event.code === 'Space' || event.key === 'k' || event.key === 'K' || 
+            if (event.code === 'Space' || event.key === 'k' || event.key === 'K' ||
                 event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
                 event.preventDefault();
                 event.stopPropagation();
@@ -801,7 +886,7 @@
         }
 
         playersState[playerId].intervalId = setInterval(() => {
-            if (!playersState[playerId] || !playersState[playerId].player || 
+            if (!playersState[playerId] || !playersState[playerId].player ||
                 typeof playersState[playerId].player.getCurrentTime !== 'function') {
                 return;
             }
@@ -821,7 +906,7 @@
                 checkDelayedItems(playerId, currentTime, container);
 
                 if (typeof features.unlock_after !== 'undefined' && typeof checkUnlockButton === 'function') {
-                    checkUnlockButton(playerId, currentTime, features.unlock_after, 
+                    checkUnlockButton(playerId, currentTime, features.unlock_after,
                                     features.unlock_selector, features.unlock_display_style);
                 }
             }
@@ -884,7 +969,7 @@
         `;
         $wrapper.append(errorDiv);
 
-        $wrapper.find('.ytp-iframe').css('visibility', 'hidden'); 
+        $wrapper.find('.ytp-iframe').css('visibility', 'hidden');
     }
 
 
@@ -895,17 +980,17 @@
         const state = playersState[playerId];
         const currentViewData = viewData[playerId];
         const playerData = window['ytpData_' + playerId];
-        const features = playerData ? playerData.features : {}; 
+        const features = playerData ? playerData.features : {};
 
 
         if (!state || !player) return;
 
         if (event.data === YT.PlayerState.PLAYING) {
-            updatePlayPauseButtons(container, true, features); 
-            
+            updatePlayPauseButtons(container, true, features);
+
             if (state.popupVisible) {
                 hideReplayPopup(container, playerId, null);
-                if (features.enable_ended_overlay) hideVideoEndedOverlay(container, playerId); 
+                if (features.enable_ended_overlay) hideVideoEndedOverlay(container, playerId);
             }
 
             if (features.enable_ended_overlay) {
@@ -935,7 +1020,7 @@
             }
 
         } else if (event.data === YT.PlayerState.PAUSED) {
-            updatePlayPauseButtons(container, false, features); 
+            updatePlayPauseButtons(container, false, features);
 
             if (currentViewData && currentViewData.interval) {
                 const currentTime = player.getCurrentTime();
@@ -956,7 +1041,7 @@
 
         } else if (event.data === YT.PlayerState.ENDED) {
             console.log(`[CONVERTTIZE DEBUG] Player ${playerId} reached ENDED state.`);
-            updatePlayPauseButtons(container, false, features); 
+            updatePlayPauseButtons(container, false, features);
 
             const soundOverlay = container.querySelector('.ytp-sound-overlay');
             if (soundOverlay) {
@@ -982,7 +1067,7 @@
                     currentViewData.interval = null;
                 }
             }
-            
+
             console.log(`[CONVERTTIZE DEBUG] features.enable_ended_overlay: ${features.enable_ended_overlay}`);
             console.log(`[CONVERTTIZE DEBUG] container.querySelector('.ytp-video-ended-overlay'): ${container.querySelector('.ytp-video-ended-overlay') ? 'found' : 'not found'}`);
             console.log(`[CONVERTTIZE DEBUG] state.videoStarted: ${state.videoStarted}`);
@@ -1005,7 +1090,7 @@
             endedOverlay.style.display = 'none';
             endedOverlay.classList.remove('visible');
         }
-        
+
         const state = playersState[playerId];
         if (state) {
             state.popupVisible = false;
@@ -1015,13 +1100,13 @@
     function showVideoEndedOverlay(container, playerId) {
         console.log(`[CONVERTTIZE DEBUG] Showing video ended overlay for player ${playerId}`);
         const state = playersState[playerId];
-        if (!state) { 
-            return; 
+        if (!state) {
+            return;
         }
 
         let endedOverlay = container.querySelector('.ytp-video-ended-overlay');
-        if (!endedOverlay) { 
-            return; 
+        if (!endedOverlay) {
+            return;
         }
 
         const soundOverlay = container.querySelector('.ytp-sound-overlay');
@@ -1038,10 +1123,10 @@
         if (playerData && playerData.colors && playerData.features) {
             endedOverlay.style.background = '#000000 !important';
             endedOverlay.style.color = playerData.colors.text_color || '#ffffff';
-            
+
             const endedMessageElement = endedOverlay.querySelector('.ytp-ended-message');
             if (endedMessageElement) endedMessageElement.textContent = playerData.features.ended_overlay_message || 'Vídeo finalizado';
-            
+
             const endedButtons = endedOverlay.querySelectorAll('.ytp-ended-btn');
             endedButtons.forEach(btn => {
                 btn.style.background = playerData.colors.primary_color || '#ff9500';
@@ -1081,7 +1166,7 @@
         endedOverlay.style.background = '#000000';
         endedOverlay.style.zIndex = '9999';
         endedOverlay.style.justifyContent = 'center';
-        endedOverlay.style.alignItems = 'center'; 
+        endedOverlay.style.alignItems = 'center';
         endedOverlay.style.flexDirection = 'column';
 
         endedOverlay.offsetHeight;
@@ -1101,7 +1186,7 @@
         const pauseBtn = container.querySelector('.ytp-pause');
         const state = playersState[container.id.replace('_container', '')];
 
-        if (!features.enable_play_pause_buttons || !playBtn || !pauseBtn || !state || !state.videoStarted) { 
+        if (!features.enable_play_pause_buttons || !playBtn || !pauseBtn || !state || !state.videoStarted) {
             if (playBtn) playBtn.style.display = 'none';
             if (pauseBtn) pauseBtn.style.display = 'none';
             return;
@@ -1130,7 +1215,7 @@
 
         playersState[playerId].delayedItemsState.forEach(itemState => {
             if (!itemState.config || !itemState.config.selector) return;
-            
+
             const elements = document.querySelectorAll(itemState.config.selector);
             elements.forEach(el => {
                 el.style.display = 'none';
@@ -1139,11 +1224,11 @@
                 el.style.height = '0px';
                 el.style.overflow = 'hidden';
                 el.style.pointerEvents = 'none';
-                
+
                 if (itemState.config.class_to_add) {
                     el.classList.remove(itemState.config.class_to_add);
                 }
-                
+
                 el.dataset.converttizeDelayedItemProcessed = 'false';
             });
         });
@@ -1171,7 +1256,7 @@
                 const elementsToProcess = document.querySelectorAll(itemState.config.selector);
 
                 if (elementsToProcess.length === 0) {
-                    itemState.shown = true; 
+                    itemState.shown = true;
                     return;
                 }
 
@@ -1187,12 +1272,12 @@
                         el.style.removeProperty('visibility');
                         el.style.removeProperty('height');
                         el.style.removeProperty('overflow');
-                        el.style.pointerEvents = 'none'; 
+                        el.style.pointerEvents = 'none';
 
                         if (itemState.config.class_to_add) {
                             el.classList.add(itemState.config.class_to_add);
                         }
-                    } 
+                    }
                     else {
                         if (itemState.config.html_content) {
                             el.innerHTML = itemState.config.html_content;
@@ -1203,7 +1288,7 @@
                         el.style.visibility = 'visible';
                         el.style.height = 'auto';
                         el.style.overflow = 'visible';
-                        el.style.pointerEvents = 'auto'; 
+                        el.style.pointerEvents = 'auto';
 
                         el.classList.add('is-visible');
 
@@ -1243,7 +1328,7 @@
                                                             section.style.display = 'block';
                                                             section.style.height = 'auto';
                                                             section.style.overflow = 'visible';
-                                                            section.style.pointerEvents = 'auto'; 
+                                                            section.style.pointerEvents = 'auto';
                                                         });
                                                     }
                                                     el.style.display = 'none';
@@ -1256,7 +1341,7 @@
                         }
                     }
                 });
-                
+
                 itemState.shown = true;
             }
         });
@@ -1354,7 +1439,7 @@
 
         if (currentTime >= unlockTime) {
             const container = document.getElementById(playerId + '_container');
-            const btn = container.querySelector(unlockSelector || '.ytp-unlock-button-placeholder'); 
+            const btn = container.querySelector(unlockSelector || '.ytp-unlock-button-placeholder');
             if (btn) {
                 btn.style.display = unlockDisplayStyle || 'block';
                 state.unlockHandlerCalled = true;
@@ -1383,7 +1468,7 @@
                 }
             }
         }
-        
+
         for (const playerId in playersState) {
             if (playersState[playerId].intervalId) {
                 clearInterval(playersState[playerId].intervalId);
@@ -1421,7 +1506,7 @@
                     }
                 } catch (e) {}
            }
-}
+        }
     }
     if (typeof document.addEventListener !== "undefined" && typeof document.hidden !== "undefined") {
         document.addEventListener("visibilitychange", handleVisibilityChange, false);
@@ -1429,10 +1514,10 @@
 
     document.addEventListener('lumePlayerOptionsChanged', function (e) {
         const options = e.detail;
-        
+
         document.querySelectorAll('.ytp-wrapper').forEach(wrapper => {
             const playerId = wrapper.id.replace('_container', '');
-            
+
             const playerData = window['ytpData_' + playerId];
             if (playerData && playerData.features) {
                 const playBtn = wrapper.querySelector('.ytp-play');
