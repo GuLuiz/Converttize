@@ -2,7 +2,6 @@
     let players = {};
     let playersState = {};
     let viewData = {};
-    let analyticsAlreadySent = {};
     let licenseStatus = 'inactive'; // Default to inactive until determined by PHP config
     let isInitialized = false;
     let securityToken = null;
@@ -80,7 +79,7 @@
         }
         if (pauseBtnCustom && handlePauseButtonClickRef) {
             pauseBtnCustom.removeEventListener('click', handlePauseButtonClickRef);
-            handlePauseButtonClickRef = null; // CORRIGIDO: Este era o erro, estava handlePlayButtonClickRef = null
+            handlePlayButtonClickRef = null; // CORRIGIDO: Este era o erro, estava handlePlayButtonClickRef = null
         }
         if (container && handleContainerClickRef) {
             container.removeEventListener('click', handleContainerClickRef, true);
@@ -111,25 +110,24 @@
             clearInterval(youtubeApiPollInterval); // Stop polling
 
             if (!youtubeApiReady) { // If YT object detected but official event didn't fire
-                console.warn('[CONVERTTIZE-INIT] YT object detectado via polling, onYouTubeIframeAPIReady NÃO disparou. Forçando chamada do callback oficial.');
+                // console.warn('[CONVERTTIZE-INIT] YT object detectado via polling, onYouTubeIframeAPIReady NÃO disparou. Forçando chamada do callback oficial.');
                 youtubeApiReady = true; // Set the flag
                 // Manually call the official onYouTubeIframeAPIReady to ensure full setup
                 if (typeof window.onYouTubeIframeAPIReady === 'function') {
                     window.onYouTubeIframeAPIReady();
                 } else {
-                    console.error('[CONVERTTIZE-INIT] window.onYouTubeIframeAPIReady is not a function, cannot force setup.');
+                    // console.error('[CONVERTTIZE-INIT] window.onYouTubeIframeAPIReady is not a function, cannot force setup.');
                     initializeLicenseConfig(); // Fallback to just license config
                     attemptPlayerInitialization(); // And attempt initialization
                 }
             } else {
-                console.log('[CONVERTTIZE-INIT] YT object detectado via polling e onYouTubeIframeAPIReady já disparado. Prosseguindo.');
-                // In this case, onYouTubeIframeAPIReady would have already called initializeLicenseConfig and attemptPlayerInitialization
+                // console.log('[CONVERTTIZE-INIT] YT object detectado via polling e onYouTubeIframeAPIReady já disparado. Prosseguindo.');
             }
         } else {
             youtubeApiPollAttempts++;
             if (youtubeApiPollAttempts >= MAX_YOUTUBE_API_POLL_ATTEMPTS) {
                 clearInterval(youtubeApiPollInterval); // Stop polling
-                console.error('[CONVERTTIZE-INIT] YouTube API (YT object) NÃO disponível após MÚLTIPLAS tentativas de polling. Pode estar BLOQUEADO ou falhou ao carregar.');
+                // console.error('[CONVERTTIZE-INIT] YouTube API (YT object) NÃO disponível após MÚLTIPLAS tentativas de polling. Pode estar BLOQUEADO ou falhou ao carregar.');
                 if (!isInitialized) {
                     displayGeneralInitializationError(YOUTUBE_API_LOAD_ERROR_MESSAGE);
                 }
@@ -146,19 +144,19 @@
 
             // CORRIGIDO: validateIntegrity agora apenas verifica a existência dos dados
             if (!validateIntegrity()) {
-                console.warn('[CONVERTTIZE-INIT] Configuração de integridade da licença incompleta. Revertendo para status padrão: inactive.');
+                // console.warn('[CONVERTTIZE-INIT] Configuração de integridade da licença incompleta. Revertendo para status padrão: inactive.');
                 licenseStatus = 'inactive';
             }
-            console.log(`[CONVERTTIZE-INIT] Configuração da licença carregada. Status: ${licenseStatus}`);
+            // console.log(`[CONVERTTIZE-INIT] Configuração da licença carregada. Status: ${licenseStatus}. Token: ${securityToken ? securityToken.substring(0, 8) + '...' : 'N/A'}`);
         } else if (globalConfig === null) {
-            console.warn('[CONVERTTIZE-INIT] ytpGlobalPluginConfig não definida ao tentar inicializar config. Status de licença padrão: inactive.');
+            // console.warn('[CONVERTTIZE-INIT] ytpGlobalPluginConfig não definida ao tentar inicializar config. Status de licença padrão: inactive.');
             licenseStatus = 'inactive';
         }
     }
 
     // Função chamada pelo script da API do YouTube uma vez que ele está carregado
     window.onYouTubeIframeAPIReady = function () {
-        console.log('[CONVERTTIZE-INIT] Evento onYouTubeIframeAPIReady disparado.');
+        // console.log('[CONVERTTIZE-INIT] Evento onYouTubeIframeAPIReady disparado.');
         youtubeApiReady = true; // Ensure flag is true if official event fires first
         clearInterval(youtubeApiPollInterval); // Stop polling
         initializeLicenseConfig(); // Ensure license config is loaded
@@ -168,20 +166,20 @@
     // Função central para tentar inicializar o player quando ambas as flags são true
     function attemptPlayerInitialization() {
         if (youtubeApiReady && domReady && !isInitialized) {
-            console.log('[CONVERTTIZE-INIT] YouTube API e DOM prontos. Iniciando tentativa principal de inicialização dos players.');
+            // console.log('[CONVERTTIZE-INIT] YouTube API e DOM prontos. Iniciando tentativa principal de inicialização dos players.');
             tryInitializePlayersSafely();
             if (!isInitialized) {
                 if (!initializationInterval) {
-                    console.log('[CONVERTTIZE-INIT] Player não inicializado na primeira tentativa, iniciando intervalo de retentativas para encontrar wrappers.');
+                    // console.log('[CONVERTTIZE-INIT] Player não inicializado na primeira tentativa, iniciando intervalo de retentativas para encontrar wrappers.');
                     initializationInterval = setInterval(tryInitializePlayersSafely, 100);
                 }
             } else {
-                console.log('[CONVERTTIZE-INIT] Players inicializados com sucesso, limpando intervalo de retentativas de wrappers.');
+                // console.log('[CONVERTTIZE-INIT] Players inicializados com sucesso, limpando intervalo de retentativas de wrappers.');
                 clearInterval(initializationInterval);
             }
         } else if (isInitialized) {
             clearInterval(initializationInterval);
-            console.log('[CONVERTTIZE-INIT] Player já inicializado, ignorando tentativa adicional.');
+            // console.log('[CONVERTTIZE-INIT] Player já inicializado, ignorando tentativa adicional.');
         }
     }
 
@@ -198,12 +196,12 @@
             initializePlayers(wrappers);
             isInitialized = true;
             clearInterval(initializationInterval);
-            console.log('[CONVERTTIZE-INIT] Players wrappers inicializados com sucesso.');
+            // console.log('[CONVERTTIZE-INIT] Players wrappers inicializados com sucesso.');
         } else {
             initializationAttempts++;
             if (initializationAttempts >= MAX_INITIALIZATION_ATTEMPTS) {
                 clearInterval(initializationInterval);
-                console.warn('[CONVERTTIZE-INIT] Máximo de tentativas de encontrar wrappers atingido. Nenhum player encontrado para inicializar.');
+                // console.warn('[CONVERTTIZE-INIT] Máximo de tentativas de encontrar wrappers atingido. Nenhum player encontrado para inicializar.');
                 displayGeneralInitializationError("Nenhum player foi encontrado para inicializar. Verifique a configuração do shortcode ou se o Elementor está atrasando a renderização.");
             }
         }
@@ -215,10 +213,10 @@
             const uid = wrapper.id.replace('_container', '');
             const playerData = window['ytpData_' + uid];
             if (!playerData || !playerData.video_id) {
-                console.warn(`[CONVERTTIZE-INIT] Dados insuficientes para player ${uid}. Pulando renderização.`);
+                // console.warn(`[CONVERTTIZE-INIT] Dados insuficientes para player ${uid}. Pulando renderização.`);
                 return;
             }
-            console.log(`[CONVERTTIZE-INIT] Renderizando player ${uid} com status: ${licenseStatus}.`);
+            // console.log(`[CONVERTTIZE-INIT] Renderizando player ${uid} com status: ${licenseStatus}.`);
             renderPlayerByLicenseStatus(wrapper, uid, playerData);
         });
     }
@@ -235,7 +233,7 @@
                         <button onclick="window.location.reload();" style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">
                             Recarregar Página
                         </button>
-                        <p style="font-size: 0.8em; margin-top: 10px; opacity: 0.7;">(${initializationAttempts} tentativas de carregamento)</p>
+                        <p style="font-size: 0.8em; margin-top: 10px; opacity: 0.7;">((${initializationAttempts} tentativas de carregamento))</p>
                     </div>
                 `;
                 $wrapper.append(errorDiv);
@@ -599,54 +597,91 @@
         document.head.appendChild(style);
     }
 
-    function sendAnalytics(analyticsData, exitTime) {
+    /**
+     * Sends analytics data to the server.
+     * @param {object} analyticsData - The analytics data object (videoId, player_id, watchedTime, etc.).
+     * @param {boolean} isFinalSend - True if this is a final send (e.g., on pause, end, or beforeunload).
+     */
+    function sendAnalytics(analyticsData, isFinalSend = false) {
+        const state = playersState[analyticsData.player_id]; 
+        // NEW REQUIREMENT: Analytics only if user clicked to start WITH SOUND.
+        if (!state.analyticsReadyForSession) {
+            // console.log(`[CONVERTTIZE-ANALYTICS] Analytics NOT sent for player ${analyticsData.player_id}: User has not explicitly enabled sound.`);
+            return;
+        }
+
+
         if (licenseStatus !== 'active' && licenseStatus !== 'trial') {
+            // console.log(`[CONVERTTIZE-ANALYTICS] Analytics not sent for player ${analyticsData.player_id}: License inactive or trial expired.`);
             return;
         }
 
         if (!analyticsData || !globalConfig || !globalConfig.ajax_url) {
+            // console.error(`[CONVERTTIZE-ANALYTICS] Analytics not sent for player ${analyticsData.player_id}: Missing data or config.`);
             return;
         }
 
-        const videoKey = analyticsData.videoId;
-        if (analyticsAlreadySent[videoKey]) {
-            return;
-        }
+        const watchDataToSend = {};
+        const currentWatchedTime = Math.floor(analyticsData.watchedTime);
+        let maxSecondToSend = currentWatchedTime;
 
-        analyticsAlreadySent[videoKey] = true;
-
-        const watchData = {};
-        if (analyticsData.watchedTime > 0) {
-            const totalSeconds = Math.floor(analyticsData.watchedTime);
-            for (let i = 0; i <= totalSeconds; i++) {
-                watchData[i] = 1;
+        // On final send, ensure all watched seconds are included up to video duration
+        if (isFinalSend) {
+            // Use the actual player duration for final send to capture full video if watched
+            const playerInstance = players[analyticsData.player_id];
+            if (playerInstance && typeof playerInstance.getDuration === 'function') {
+                maxSecondToSend = Math.floor(playerInstance.getDuration());
             }
+            if (maxSecondToSend < currentWatchedTime) { // Ensure it's at least current time if duration is not available or less
+                maxSecondToSend = currentWatchedTime;
+            }
+        }
+
+        // Iterate from the last successfully sent second up to the current max observed second
+        for (let i = state.lastSentSecond; i <= maxSecondToSend; i++) {
+            if (state.watchedSecondsInSession.has(i)) {
+                watchDataToSend[i] = 1; // Mark this second as observed
+            }
+        }
+        
+        // Only send if there's new data or it's a final send, and there are actually seconds to send
+        if (Object.keys(watchDataToSend).length === 0 && !isFinalSend) {
+            // console.log(`[CONVERTTIZE-ANALYTICS] No new data to send for player ${analyticsData.player_id}. Skipping.`);
+            return;
         }
 
         const postData = {
             action: 'lumeplayer_save_analytics',
-            video_id: analyticsData.videoId,
-            watch_data: JSON.stringify(watchData),
+            // --- CORRIGIDO: Agora usa analyticsData.video_id (com id minúsculo) ---
+            video_id: String(analyticsData.video_id || ''), // Use analyticsData.video_id, e garanta que seja string ou vazio
+            watch_data: JSON.stringify(watchDataToSend),
             nonce: globalConfig.nonce,
-            // security_token é o security_hash que veio do servidor, ele é o que assina os dados.
-            security_token: securityToken
+            security_token: securityToken,
+            license_status_at_load: licenseStatus 
         };
 
         $.post(globalConfig.ajax_url, postData)
             .done(function (response) {
                 if (response.success) {
+                    // Update lastSentSecond only if the send was successful
+                    // This prevents re-sending already acknowledged seconds.
+                    state.lastSentSecond = maxSecondToSend + 1;
+                    // console.log(`[CONVERTTIZE-ANALYTICS] Analytics enviados com sucesso para player ${analyticsData.player_id}. Último segundo enviado: ${maxSecondToSend}. Pontos enviados: ${Object.keys(watchDataToSend).length}`);
                 } else {
-                    analyticsAlreadySent[videoKey] = false;
+                    // console.error(`[CONVERTTIZE-ANALYTICS] Falha no envio de Analytics para player ${analyticsData.player_id}:`, response.data.message);
                 }
             })
             .fail(function (xhr, status, error) {
-                analyticsAlreadySent[videoKey] = false;
+                // console.error(`[CONVERTTIZE-ANALYTICS] Erro AJAX ao enviar Analytics para player ${analyticsData.player_id}:`, status, error, xhr.responseText);
             });
     }
 
     function onPlayerReady(event, playerId, features) {
         const player = event.target;
-        console.log(`[CONVERTTIZE-DEBUG] onPlayerReady disparado para player ${playerId}. Estado inicial: ${player.getPlayerState()}`);
+        // console.log(`[CONVERTTIZE-DEBUG] onPlayerReady disparado para player ${playerId}. Estado inicial: ${player.getPlayerState()}`);
+        // console.log(`[CONVERTTIZE-DEBUG] onPlayerReady: Valor de features.video_id recebido: "${features.video_id}"`); // NOVO: Log de depuração
+        // console.log(`[CONVERTTIZE-DEBUG] onPlayerReady: Valor de window['ytpData_' + playerId].video_id: "${window['ytpData_' + playerId] ? window['ytpData_' + playerId].video_id : 'N/A'}"`); // NOVO: Log de depuração
+
         const container = document.getElementById(playerId + '_container');
         const overlay = container.querySelector('.ytp-sound-overlay');
         const progressBar = container.querySelector('.ytp-progress-bar');
@@ -677,16 +712,24 @@
             delayedItemsState: [],
             unlockHandlerCalled: false,
             wasPausedByVisibilityChange: false,
-            initialAutoplayMuted: false
+            initialAutoplayMuted: false,
+            // NEW: Analytics tracking for current session
+            watchedSecondsInSession: new Set(), // Set to store unique seconds watched in current session
+            lastSentSecond: 0, // Last second successfully sent to analytics
+            heartbeatInterval: null, // Interval ID for periodic analytics send
+            analyticsReadyForSession: false // NEW: Flag to enable analytics capturing
         };
 
         viewData[playerId] = {
-            videoId: features.video_id || (window['ytpData_' + playerId] ? window['ytpData_' + playerId].video_id : null),
+            // --- GARANTE que video_id é sempre uma string, preferindo playerData.video_id ---
+            video_id: String(playerData.video_id || ''), 
+            player_id: playerId, // Pass player ID for sendAnalytics
             watchedTime: 0,
             lastTime: 0,
             interval: null,
             lastTimeForDelta: 0
         };
+        // console.log(`[CONVERTTIZE-DEBUG] onPlayerReady: viewData[${playerId}].video_id inicializado como: "${viewData[playerId].video_id}"`); // NOVO: Log de depuração
 
         const thisPlayerWantsToUnlock = (typeof features.unlock_after !== 'undefined' && features.unlock_after > 0) ||
             (features.delayed_items && features.delayed_items.some(item => item.time > 0));
@@ -694,9 +737,9 @@
         if (thisPlayerWantsToUnlock) {
             if (pageHasActiveUnlockController === null) {
                 pageHasActiveUnlockController = playerId;
-                console.log(`[CONVERTTIZE] Player ${playerId} designado como controlador de desbloqueio para esta página.`);
+                // console.log(`[CONVERTTIZE] Player ${playerId} designado como controlador de desbloqueio para esta página.`);
             } else if (pageHasActiveUnlockController !== playerId) {
-                console.warn(`[CONVERTTIZE] Desbloqueio de conteúdo desativado para o Player ${playerId}. Apenas um player por página pode controlar o desbloqueio. Player ${pageHasActiveUnlockController} já está ativo.`);
+                // console.warn(`[CONVERTTIZE] Desbloqueio de conteúdo desativado para o Player ${playerId}. Apenas um player por página pode controlar o desbloqueio. Player ${pageHasActiveUnlockController} já está ativo.`);
             }
         }
 
@@ -705,7 +748,7 @@
             player.setOption("captions", "track", {});
         }
         catch (e) {
-            console.warn(`[CONVERTTIZE] Erro ao tentar manipular legendas: ${e.message}. Verifique a API do YouTube.`);
+            // console.warn(`[CONVERTTIZE] Erro ao tentar manipular legendas: ${e.message}. Verifique a API do YouTube.`);
         }
 
 
@@ -738,20 +781,20 @@
                 iframe.style.pointerEvents = 'none'; // Make iframe unclickable
             }
 
-            console.log(`[CONVERTTIZE-DEBUG] Overlay visível. Estado atual (onPlayerReady): ${player.getPlayerState()}`);
+            // console.log(`[CONVERTTIZE-DEBUG] Overlay visível. Estado atual (onPlayerReady): ${player.getPlayerState()}`);
 
             if (player.getPlayerState() === -1) {
-                console.warn('[CONVERTTIZE-DEBUG] Player em estado UNSTARTED. Tentando comando playVideo() atrasado.');
+                // console.warn('[CONVERTTIZE-DEBUG] Player em estado UNSTARTED. Tentando comando playVideo() atrasado.');
                 setTimeout(() => {
                     player.playVideo();
-                    console.log(`[CONVERTTIZE-DEBUG] Player estado após playVideo() atrasado: ${player.getPlayerState()}`);
+                    // console.log(`[CONVERTTIZE-DEBUG] Player estado após playVideo() atrasado: ${player.getPlayerState()}`);
                 }, 10);
             }
 
             // Click listener on the invisible click catcher
             ytpClickCatcher.addEventListener('click', (event) => {
                 event.stopPropagation();
-                console.log(`[CONVERTTIZE-OVERLAY] Clique no overlay para player ${playerId} detectado.`);
+                // console.log(`[CONVERTTIZE-OVERLAY] Clique no overlay para player ${playerId} detectado.`);
 
                 container.querySelector('.converttize-runtime-error')?.remove();
                 // iframe.style.visibility já está 'visible' por padrão, apenas reativa pointer-events.
@@ -761,12 +804,14 @@
 
                 player.seekTo(0);
                 player.unMute();
+                playersState[playerId].analyticsReadyForSession = true; // NEW: Enable analytics after click with sound
+                // console.log(`[CONVERTTIZE-ANALYTICS] Analytics ativado para player ${playerId} após clique no overlay de som.`);
 
                 let checkAttempts = 0;
                 const maxCheckAttempts = 20; // Check for up to 2 seconds (20 * 100ms)
                 const checkInterval = setInterval(() => {
                     const state = player.getPlayerState();
-                    console.log(`[CONVERTTIZE-OVERLAY] Check attempt 1: Player state is ${state}`);
+                    // console.log(`[CONVERTTIZE-OVERLAY] Check attempt 1: Player state is ${state}`);
 
                     if (state === YT.PlayerState.PLAYING) {
                         clearInterval(checkInterval);
@@ -777,12 +822,12 @@
                             ytpControls.style.display = 'flex'; // Show the play/pause buttons
                         }
                         updatePlayPauseButtons(container, true, features);
-                        console.log(`[CONVERTTIZE-OVERLAY] Vídeo ${playerId} iniciado com sucesso.`);
+                        // console.log(`[CONVERTTIZE-OVERLAY] Vídeo ${playerId} iniciado com sucesso.`);
                         // Re-habilita interações do player após o overlay ser ocultado, passando as referências
                         attachPlayerListeners(player, container, features, playBtnCustom, pauseBtnCustom);
                     } else if (checkAttempts >= maxCheckAttempts) {
                         clearInterval(checkInterval);
-                        console.warn(`[CONVERTTIZE-OVERLAY] Falha ao iniciar vídeo ${playerId}. Estado final: ${state}.`);
+                        // console.warn(`[CONVERTTIZE-OVERLAY] Falha ao iniciar vídeo ${playerId}. Estado final: ${state}.`);
                         displayPlayerRuntimeError(playerId, "Falha ao iniciar o vídeo.", `O player não respondeu ao clique. Estado final: ${state}. Tente recarregar. (Erro: API_CLICK_FAIL_0)`, "API_CLICK_FAIL_0");
                     }
                     checkAttempts++;
@@ -801,9 +846,9 @@
                 iframe.style.pointerEvents = 'none'; // Make iframe unclickable
             }
 
-            console.log(`[CONVERTTIZE-DEBUG] Tentando playVideo() mutado para player ${playerId}. Estado ANTES da chamada: ${player.getPlayerState()}`);
+            // console.log(`[CONVERTTIZE-DEBUG] Tentando playVideo() mutado para player ${playerId}. Estado ANTES da chamada: ${player.getPlayerState()}`);
             player.playVideo();
-            console.log(`[CONVERTTIZE-DEBUG] player.playVideo() chamado para player ${playerId}`);
+            // console.log(`[CONVERTTIZE-DEBUG] player.playVideo() chamado para player ${playerId}`);
             updatePlayPauseButtons(container, false, features);
 
             unmuteButtonOverlay.style.display = 'flex'; // Show visible overlay
@@ -816,6 +861,8 @@
                     player.unMute();
                     player.playVideo();
                     playersState[playerId].initialAutoplayMuted = false;
+                    playersState[playerId].analyticsReadyForSession = true; // NEW: Enable analytics after click with sound
+                    // console.log(`[CONVERTTIZE-ANALYTICS] Analytics ativado para player ${playerId} após clique no overlay de autoplay mutado.`);
                     unmuteButtonOverlay.style.display = 'none'; // Hide visible overlay
                     ytpClickCatcher.style.display = 'none'; // Hide invisible click catcher
                     // Mostra controles customizados
@@ -846,11 +893,14 @@
                 iframe.style.pointerEvents = 'auto'; // Make iframe clickable again
             }
             ytpClickCatcher.style.display = 'none'; // Ensure click catcher is hidden
+            playersState[playerId].analyticsReadyForSession = true; // NEW: Enable analytics as video starts directly with sound
+            // console.log(`[CONVERTTIZE-ANALYTICS] Analytics ativado para player ${playerId} (início direto com som).`);
         }
         // --- FIM DA LÓGICA DE CONTROLE DE INTERAÇÕES ---
 
 
         if (playBtnCustom) playBtnCustom.title = features.play_button_title || 'Play';
+        // CORREÇÃO: pauseBtnData para pauseBtnCustom
         if (pauseBtnCustom) pauseBtnCustom.title = features.pause_button_title || 'Pause';
 
 
@@ -885,6 +935,16 @@
             initializeDelayedItems(playerId, container, features);
         }
 
+        // Start heartbeat interval for analytics, if license allows
+        if (licenseStatus === 'active' || licenseStatus === 'trial') {
+            playersState[playerId].heartbeatInterval = setInterval(() => {
+                const playerInstance = playersState[playerId].player;
+                if (playerInstance && playerInstance.getPlayerState() === YT.PlayerState.PLAYING) {
+                    sendAnalytics(viewData[playerId]); // Send current watched data
+                }
+            }, 5000); // Send every 5 seconds (adjust as needed)
+        }
+
         playersState[playerId].intervalId = setInterval(() => {
             if (!playersState[playerId] || !playersState[playerId].player ||
                 typeof playersState[playerId].player.getCurrentTime !== 'function') {
@@ -915,7 +975,7 @@
 
     // NOVO MÉTODO: Trata erros específicos do player do YouTube
     function onPlayerError(event, playerId) {
-        console.error(`[CONVERTTIZE-RUNTIME-ERROR] Erro no player ${playerId}:`, event.data);
+        // console.error(`[CONVERTTIZE-RUNTIME-ERROR] Erro no player ${playerId}:`, event.data);
         let userMessage = "O vídeo não pôde ser carregado.";
         let detailedError = "Um erro inesperado ocorreu.";
 
@@ -942,14 +1002,14 @@
                 detailedError = `Código: ${event.data}. Tente recarregar ou contate o suporte.`;
                 break;
         }
-        displayPlayerRuntimeError(playerId, userMessage, detailedError, event.data);
+        displayPlayerRuntimeError(playerId, userMessage, detailedError, errorCode);
     }
 
     // NOVO MÉTODO: Exibe o overlay de erro em tempo de execução para um player específico
     function displayPlayerRuntimeError(playerId, message, detailedMessage, errorCode) {
         const $wrapper = $(`#${playerId}_container`);
         if (!$wrapper.length) {
-            console.warn(`[CONVERTTIZE-ERROR] Wrapper para o player ${playerId} não encontrado para exibir erro.`);
+            // console.warn(`[CONVERTTIZE-ERROR] Wrapper para o player ${playerId} não encontrado para exibir erro.`);
             return;
         }
 
@@ -976,7 +1036,11 @@
     function onPlayerStateChange(event, playerId) {
         const player = players[playerId];
         const container = document.getElementById(playerId + '_container');
-          console.log(`[CONVERTTIZE-DEBUG] Player ${playerId} - Mudança de estado para: ${event.data}`);
+        // CORRIGIDO: Obter currentTime localmente dentro da função
+        const currentTime = player.getCurrentTime(); 
+        
+        // console.log(`[CONVERTTIZE-DEBUG] Player ${playerId} - Mudança de estado para: ${event.data}. CurrentTime: ${currentTime}`);
+        
         const state = playersState[playerId];
         const currentViewData = viewData[playerId];
         const playerData = window['ytpData_' + playerId];
@@ -984,6 +1048,23 @@
 
 
         if (!state || !player) return;
+
+        // NEW: Ajustar lógica de reset dos analytics para ser mais precisa
+        // Reseta somente se o player passar para PLAYING vindo de ENDED ou UNSTARTED (recomeço de sessão)
+        // ou se o tempo atual for muito pequeno (reinicio forçado) E já houver dados na sessão anterior.
+        if (event.data === YT.PlayerState.PLAYING) {
+            // Verifique se o vídeo está a iniciar do começo (ou muito próximo)
+            const isStartingOver = (currentTime < 1); // Simplificado para verificar apenas o tempo
+            const hasPreviousSessionData = (state.watchedSecondsInSession.size > 0 || state.lastSentSecond !== 0);
+
+            // Condição para resetar: Está a começar (ou recomeçar do 0) E já tínhamos dados registados.
+            if (isStartingOver && hasPreviousSessionData) {
+                state.watchedSecondsInSession.clear();
+                state.lastSentSecond = 0;
+                // console.log(`[CONVERTTIZE-ANALYTICS] Analytics tracking reset for player ${playerId} on new playback session (current time < 1s and had previous data).`);
+            }
+        }
+
 
         if (event.data === YT.PlayerState.PLAYING) {
             updatePlayPauseButtons(container, true, features);
@@ -1002,19 +1083,20 @@
             }
 
             if (currentViewData && !currentViewData.interval) {
-                currentViewData.lastTime = player.getCurrentTime();
-                currentViewData.lastTimeForDelta = currentViewData.lastTime;
+                currentViewData.lastTime = currentTime; // Use the currentTime fetched earlier
+                currentViewData.lastTimeForDelta = currentTime;
 
                 currentViewData.interval = setInterval(() => {
                     if (player.getPlayerState() === YT.PlayerState.PLAYING) {
-                        const currentTime = player.getCurrentTime();
-                        const delta = currentTime - currentViewData.lastTime;
+                        const currentIntervalTime = player.getCurrentTime(); // Get current time again in interval for accuracy
+                        const delta = currentIntervalTime - currentViewData.lastTime;
 
-                        if (delta > 0 && delta < 5) {
+                        if (delta > 0 && delta < 5) { // Ensure time is actually advancing
                             currentViewData.watchedTime += delta;
+                            state.watchedSecondsInSession.add(Math.floor(currentIntervalTime)); // Store unique seconds
                         }
-                        currentViewData.lastTime = currentTime;
-                        currentViewData.lastTimeForDelta = currentTime;
+                        currentViewData.lastTime = currentIntervalTime;
+                        currentViewData.lastTimeForDelta = currentIntervalTime;
                     }
                 }, 500);
             }
@@ -1023,13 +1105,14 @@
             updatePlayPauseButtons(container, false, features);
 
             if (currentViewData && currentViewData.interval) {
-                const currentTime = player.getCurrentTime();
-                const delta = currentTime - currentViewData.lastTime;
+                const currentPauseTime = player.getCurrentTime(); // Capture time on pause
+                const delta = currentPauseTime - currentViewData.lastTime;
                 if (delta > 0 && delta < 5) {
                     currentViewData.watchedTime += delta;
+                    state.watchedSecondsInSession.add(Math.floor(currentPauseTime)); // Add current second on pause
                 }
-                currentViewData.lastTime = currentTime;
-                currentViewData.lastTimeForDelta = currentTime;
+                currentViewData.lastTime = currentPauseTime;
+                currentViewData.lastTimeForDelta = currentPauseTime;
 
                 clearInterval(currentViewData.interval);
                 currentViewData.interval = null;
@@ -1038,9 +1121,14 @@
             if (state.videoStarted && !state.popupVisible && !state.wasPausedByVisibilityChange) {
                 showReplayPopup(container, playerId);
             }
+            
+            // Send analytics immediately when paused
+            if (currentViewData) {
+                sendAnalytics(currentViewData);
+            }
 
         } else if (event.data === YT.PlayerState.ENDED) {
-            console.log(`[CONVERTTIZE DEBUG] Player ${playerId} reached ENDED state.`);
+            // console.log(`[CONVERTTIZE DEBUG] Player ${playerId} reached ENDED state.`);
             updatePlayPauseButtons(container, false, features);
 
             const soundOverlay = container.querySelector('.ytp-sound-overlay');
@@ -1049,16 +1137,19 @@
             }
 
             if (currentViewData) {
-                const currentTime = player.getCurrentTime();
+                const currentEndTime = player.getCurrentTime(); // Capture time on end
                 const duration = player.getDuration();
 
-                if (duration > 0 && currentTime >= (duration - 1)) {
-                    const totalWatchTime = Math.max(currentViewData.watchedTime, duration);
-                    currentViewData.watchedTime = totalWatchTime;
+                if (duration > 0 && currentEndTime >= (duration - 1)) {
+                    // Ensure all seconds up to duration are marked as watched on END
+                    for (let i = state.lastSentSecond; i <= Math.floor(duration); i++) {
+                        state.watchedSecondsInSession.add(i); // Add all remaining seconds up to end
+                    }
                 } else {
-                    const delta = currentTime - currentViewData.lastTime;
+                    const delta = currentEndTime - currentViewData.lastTime;
                     if (delta > 0 && delta < 5) {
                         currentViewData.watchedTime += delta;
+                        state.watchedSecondsInSession.add(Math.floor(currentEndTime)); // Add current second on end
                     }
                 }
 
@@ -1068,23 +1159,29 @@
                 }
             }
 
-            console.log(`[CONVERTTIZE DEBUG] features.enable_ended_overlay: ${features.enable_ended_overlay}`);
-            console.log(`[CONVERTTIZE DEBUG] container.querySelector('.ytp-video-ended-overlay'): ${container.querySelector('.ytp-video-ended-overlay') ? 'found' : 'not found'}`);
-            console.log(`[CONVERTTIZE DEBUG] state.videoStarted: ${state.videoStarted}`);
+            // console.log(`[CONVERTTIZE DEBUG] features.enable_ended_overlay: ${features.enable_ended_overlay}`);
+            // console.log(`[CONVERTTIZE DEBUG] container.querySelector('.ytp-video-ended-overlay'): ${container.querySelector('.ytp-video-ended-overlay') ? 'found' : 'not found'}`);
+            // console.log(`[CONVERTTIZE DEBUG] state.videoStarted: ${state.videoStarted}`);
 
             if (features.enable_ended_overlay && container.querySelector('.ytp-video-ended-overlay') && state.videoStarted) {
-                console.log(`[CONVERTTIZE DEBUG] All conditions met for showVideoEndedOverlay for player ${playerId}`);
+                // console.log(`[CONVERTTIZE DEBUG] All conditions met for showVideoEndedOverlay for player ${playerId}`);
                 showVideoEndedOverlay(container, playerId);
             } else {
-                console.log(`[CONVERTTIZE DEBUG] showVideoEndedOverlay not called for player ${playerId} due to unmet conditions.`);
+                // console.log(`[CONVERTTIZE DEBUG] showVideoEndedOverlay not called for player ${playerId} due to unmet conditions.`);
             }
 
-            sendAnalytics(currentViewData, player.getCurrentTime());
+            // Send final analytics data when video ends
+            sendAnalytics(currentViewData, true); // true indicates final send
+            
+            // Reset for potential replay
+            state.watchedSecondsInSession.clear();
+            state.lastSentSecond = 0;
+            // console.log(`[CONVERTTIZE-ANALYTICS] Analytics tracking reset after ENDED state for player ${playerId}.`);
         }
     }
 
     function hideVideoEndedOverlay(container, playerId) {
-        console.log(`[CONVERTTIZE DEBUG] Hiding video ended overlay for player ${playerId}`);
+        // console.log(`[CONVERTTIZE DEBUG] Hiding video ended overlay for player ${playerId}`);
         const endedOverlay = container.querySelector('.ytp-video-ended-overlay');
         if (endedOverlay) {
             endedOverlay.style.display = 'none';
@@ -1098,7 +1195,7 @@
     }
 
     function showVideoEndedOverlay(container, playerId) {
-        console.log(`[CONVERTTIZE DEBUG] Showing video ended overlay for player ${playerId}`);
+        // console.log(`[CONVERTTIZE DEBUG] Showing video ended overlay for player ${playerId}`);
         const state = playersState[playerId];
         if (!state) {
             return;
@@ -1172,7 +1269,7 @@
         endedOverlay.offsetHeight;
         setTimeout(() => { endedOverlay.classList.add('visible'); }, 100);
         state.popupVisible = true;
-        console.log(`[CONVERTTIZE DEBUG] Overlay should now be visible for player ${playerId}.`);
+        // console.log(`[CONVERTTIZE DEBUG] Overlay should now be visible for player ${playerId}.`);
     }
 
     /**
@@ -1271,7 +1368,7 @@
                         el.style.removeProperty('opacity');
                         el.style.removeProperty('visibility');
                         el.style.removeProperty('height');
-                        el.style.removeProperty('overflow');
+                        el.style.overflow = 'hidden';
                         el.style.pointerEvents = 'none';
 
                         if (itemState.config.class_to_add) {
@@ -1454,18 +1551,15 @@
             if (playersState[playerId] && playersState[playerId].player && typeof playersState[playerId].player.getCurrentTime === 'function') {
                 const player = playersState[playerId].player;
                 const currentViewData = viewData[playerId];
-                const playerCurrentTime = player.getCurrentTime();
-                const videoKey = currentViewData.videoId;
-
-                if (!analyticsAlreadySent[videoKey] && (licenseStatus === 'active' || licenseStatus === 'trial')) {
-                    if (player.getPlayerState() === YT.PlayerState.PLAYING && currentViewData.lastTimeForDelta) {
-                        const delta = playerCurrentTime - currentViewData.lastTimeForDelta;
-                        if (delta > 0 && delta < 5) {
-                            currentViewData.watchedTime += delta;
-                        }
-                    }
-                    sendAnalytics(currentViewData, playerCurrentTime);
+                const state = playersState[playerId];
+                
+                // On beforeunload, ensure the last second playing is registered
+                if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                    state.watchedSecondsInSession.add(Math.floor(player.getCurrentTime()));
                 }
+                
+                // Send final analytics data, marking it as a final send
+                sendAnalytics(currentViewData, true);
             }
         }
 
@@ -1478,33 +1572,49 @@
                 clearTimeout(playersState[playerId].hidePopupTimeoutId);
                 playersState[playerId].hidePopupTimeoutId = null;
             }
+            if (playersState[playerId].heartbeatInterval) { // NEW: Clear heartbeat interval
+                clearInterval(playersState[playerId].heartbeatInterval);
+                playersState[playerId].heartbeatInterval = null;
+            }
             if (viewData[playerId] && viewData[playerId].interval) {
                 clearInterval(viewData[playerId].interval);
                 viewData[playerId].interval = null;
             }
-            delete playersState[playerId];
-            delete players[playerId];
-            delete viewData[playerId];
+            // No need to delete playersState or players/viewData entries, as page is closing anyway
+            // delete playersState[playerId];
+            // delete players[playerId];
+            // delete viewData[playerId];
         }
     });
 
+    // RESTAURADO E MELHORADO: Lógica de pausa/retoma em mudança de visibilidade da aba
     function handleVisibilityChange() {
+        // console.log('[CONVERTTIZE-VISIBILITY] Visibility change detected. document.hidden:', document.hidden);
         for (const playerId in players) {
             if (players.hasOwnProperty(playerId) && playersState[playerId] && playersState[playerId].player) {
-                const player = playersState[playerId].player;
+                const player = playersState[playerId].player; // Objeto YT.Player
                 try {
+                    const currentState = player.getPlayerState();
+                    // console.log(`[CONVERTTIZE-VISIBILITY] Player ${playerId} current state: ${currentState}, wasPausedByVisibilityChange: ${playersState[playerId].wasPausedByVisibilityChange}`);
+                    
                     if (document.hidden) {
-                        if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                        // Se a aba foi escondida e o vídeo estava a tocar
+                        if (currentState === YT.PlayerState.PLAYING) {
                             player.pauseVideo();
                             playersState[playerId].wasPausedByVisibilityChange = true;
+                            // console.log(`[CONVERTTIZE-VISIBILITY] Player ${playerId} paused due to tab hidden.`);
                         }
                     } else {
+                        // Se a aba voltou ao foco e o vídeo foi pausado por visibilidade
                         if (playersState[playerId].wasPausedByVisibilityChange && !playersState[playerId].popupVisible) {
                             player.playVideo();
+                            // console.log(`[CONVERTTIZE-VISIBILITY] Player ${playerId} resumed due to tab visible.`);
                         }
                         playersState[playerId].wasPausedByVisibilityChange = false;
                     }
-                } catch (e) {}
+                } catch (e) {
+                    // console.error(`[CONVERTTIZE-VISIBILITY] Error processing player ${playerId} on visibility change:`, e);
+                }
            }
         }
     }
@@ -1547,7 +1657,7 @@
     });
 
     $(document).ready(function () {
-        console.log('[CONVERTTIZE-INIT] DOM Ready disparado.');
+        // console.log('[CONVERTTIZE-INIT] DOM Ready disparado.');
         domReady = true;
         youtubeApiPollInterval = setInterval(pollForYoutubeApi, 100);
         attemptPlayerInitialization();

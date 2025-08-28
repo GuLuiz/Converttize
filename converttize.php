@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Converttize
  * Description: Player minimalista com UX fluida, botões próprios e desbloqueio inteligente.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: IGL Solutions
  * Text Domain: converttize 
  */
@@ -22,8 +22,8 @@ function converttize_extract_youtube_id($input) {
     $input = trim($input);
     // CORRIGIDO: Nova regex mais robusta para extrair IDs de várias URLs do YouTube.
     // Inclui youtube.com/watch, youtu.be, embed, shorts, etc.
-    // O escaping de '\' é feito para PHP, que o converte para '\' na regex.
-    $pattern = '%^(?:https?://)?(?:www\.)?(?:m\.)?(?:youtu\.be/|youtube\.com/(?:embed/|v/|watch\?v=|watch\?.+&v=|shorts/))([a-zA-Z0-9_-]{11})(?:(?:\?|&|#).*)?$%i';
+    // O escaping de '\\' é feito para PHP, que o converte para '\\' na regex.
+    $pattern = '%^(?:https?://)?(?:www\\.)?(?:m\\.)?(?:youtu\\.be/|youtube\\.com/(?:embed/|v/|watch\\?v=|watch\\?.+&v=|shorts/))([a-zA-Z0-9_-]{11})(?:(?:\\?|&|#).*)?$%i';
     
     if (preg_match($pattern, $input, $matches)) {
         return $matches[1];
@@ -172,7 +172,7 @@ class Converttize {
                     <img src="<?php echo $logo_url; ?>" alt="<?php echo $header_title; ?>" class="converttize-branding-logo">
                 <?php endif; ?>
                 <?php if ($header_title) : ?>
-                    <span class="converttize-branding-title"><?php echo $header_title; ?></span>
+                    <span class="converttize-brand-name"><?php echo $header_title; ?></span>
                 <?php endif; ?>
             </a>
         </div>
@@ -197,7 +197,7 @@ class Converttize {
 
         // Se o usuário não configurou seu branding, volta para o logo e nome do plugin Converttize
         if (empty($logo_url) && empty($header_title)) {
-            $logo_url = YTP_PLUGIN_URL . 'assets/images/20x20 - branco.png'; // Logo padrão do Converttize
+            $logo_url = YTP_PLUGIN_URL . 'assets/images/120x40.png'; // Logo padrão do Converttize
             $header_title = __('Converttize', 'converttize'); // Nome padrão do Converttize
             $header_link = admin_url('admin.php?page=' . self::MAIN_MENU_SLUG); // Link padrão do Converttize
         }
@@ -207,7 +207,7 @@ class Converttize {
         <div class="converttize-admin-header">
             <a href="<?php echo $header_link ? $header_link : esc_url($main_plugin_page_url); ?>" class="converttize-logo-link" <?php echo $header_link ? 'target="_blank"' : ''; ?>>
                 <?php if ($logo_url) : ?>
-                    <img src="<?php echo $logo_url; ?>" alt="<?php echo $header_title; ?>" class="converttize-logo">
+                    <img src="<?php echo $logo_url; ?>" alt="<?php echo $header_title; ?>" class="converttize-branding-logo">
                 <?php endif; ?>
                 <?php if ($header_title) : ?>
                     <span class="converttize-brand-name"><?php echo $header_title; ?></span>
@@ -370,7 +370,7 @@ class Converttize {
                                 </th>
                                 <td>
                                     <!-- CORRIGIDO: placeholder com exemplos de URL de vídeo simplificados e corretos -->
-                                    <input type="text" name="video_url" id="video_url" class="regular-text" value="" placeholder="<?php esc_attr_e('Ex: OdlSHPGg7Ag ou <div className="video-container mb-3"><iframe width="100%" height="315" src="https://www.youtube.com/embed/17548" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>', 'converttize'); ?>" required />
+                                    <input type="text" name="video_url" id="video_url" class="regular-text" value="" placeholder="<?php esc_attr_e('Ex: OdlSHPGg7Ag ou <div className="video-container mb-3"><iframe width="100%" height="315" src="https://www.youtube.com/embed/17514" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>', 'converttize'); ?>" required />
                                     <p class="description"><?php esc_html_e('Insira o ID do vídeo do YouTube (ex: C7OQHIpDlvA) ou o link completo do vídeo.', 'converttize'); ?></p>
                                 </td>
                             </tr>
@@ -686,7 +686,7 @@ class Converttize {
         $status = $this->validate_with_remote_server();
         $hash = $this->generate_security_hash($status);
 
-        error_log("   AJAX Check Status - Status: $status, Hash: $hash");
+        error_log("   AJAX Check Status - Status: $status, Hash: " . substr($hash, 0, 8) . '...');
 
         wp_send_json_success([
             'license_status' => $status,
@@ -718,7 +718,7 @@ class Converttize {
         $data = $status . $this->security_secret . date('Y-m-d');
         $hash = substr(hash('sha256', $data), 0, 16);
         
-        error_log("🔐 Hash gerado para status '$status': $hash");
+        error_log("🔐 Hash gerado para status '$status' para o dia " . date('Y-m-d') . ": " . substr($hash, 0, 8) . '...');
         
         return $hash;
     } catch (Exception $e) {
@@ -887,7 +887,6 @@ class Converttize {
         if (isset($data['response_hash'])) {
             $response_timestamp = strtotime($data['timestamp']);
             $expected_response_hash = substr(hash('sha256', $status . $response_timestamp . $this->security_secret), 0, 16);
-            
             if (!hash_equals($expected_response_hash, $data['response_hash'])) {
                 error_log("❌ Hash de resposta inválido");
                 $this->set_cached_license_status('inactive'); // Marca como inativo por falha de segurança
@@ -1111,7 +1110,8 @@ add_action('wp_ajax_nopriv_lumeplayer_save_analytics', 'lumeplayer_save_analytic
 function lumeplayer_save_analytics() {
     // 🔍 DEBUG TEMPORÁRIO
     error_log("🔍 === DEBUG ANALYTICS ===");
-    error_log("🔍 POST data keys: " . json_encode(array_keys($_POST))); // Não logar dados sensíveis
+    error_log("🔍 POST data keys: " . json_encode(array_keys($_POST))); 
+    error_log("🔍 Dados POST completos: " . json_encode($_POST)); // NOVO: Loga todos os dados POST
     error_log("🔍 Nonce válido: " . (wp_verify_nonce($_POST['nonce'] ?? '', 'converttize_security') ? 'SIM' : 'NÃO'));
     
     // 🔐 Verificação de nonce
@@ -1128,51 +1128,63 @@ function lumeplayer_save_analytics() {
         return;
     }
     
-    $license_status = $plugin_instance->get_license_status();
+    // Obtém o status da licença mais atual (do backend)
+    $current_backend_license_status = $plugin_instance->get_license_status();
     
-    error_log("📊 Analytics - License Status: $license_status");
+    error_log("📊 Analytics - Status atual da licença no Backend: $current_backend_license_status");
     
     // Permitir analytics para trial também
-    if ($license_status !== 'active' && $license_status !== 'trial') {
-        error_log("❌ Analytics bloqueado - Status: $license_status");
-        wp_send_json_error(['message' => 'License not active: ' . $license_status]);
+    if ($current_backend_license_status !== 'active' && $current_backend_license_status !== 'trial') {
+        error_log("❌ Analytics bloqueado - Status: $current_backend_license_status");
+        wp_send_json_error(['message' => 'License not active: ' . $current_backend_license_status]);
         return;
     }
 
-    // 🔐 CORRIGIDO: Verificação de security_token baseada no status atual
-    // O security_token vem do frontend (player.js) via globalPluginConfig.security_hash
-    if (isset($_POST['security_token'])) {
+    // 🔐 CORRIGIDO: Verificação de security_token baseada no status REPORTADO pelo frontend
+    // O security_token vem do frontend (player.js) via globalConfig.security_hash
+    if (isset($_POST['security_token']) && isset($_POST['license_status_at_load'])) {
         $security_secret = 'CONV_SEC_2024_XYZ789'; // Deve ser o mesmo secret do plugin principal
-        $today = date('Y-m-d');
+        $received_token = sanitize_text_field($_POST['security_token']);
+        $reported_license_status_from_frontend = sanitize_text_field($_POST['license_status_at_load']); // NOVO: Pega o status reportado pelo frontend
         
-        // ✅ Usar o status atual para gerar o token esperado (mesma lógica do generate_security_hash no plugin principal)
-        $expected_token = substr(hash('sha256', $license_status . $security_secret . $today), 0, 16);
+        // Gera tokens esperados para hoje e ontem USANDO O STATUS REPORTADO pelo frontend
+        $expected_token_today = substr(hash('sha256', $reported_license_status_from_frontend . $security_secret . date('Y-m-d')), 0, 16);
+        $expected_token_yesterday = substr(hash('sha256', $reported_license_status_from_frontend . $security_secret . date('Y-m-d', strtotime('-1 day'))), 0, 16);
         
-        error_log("🔐 Token recebido: " . $_POST['security_token']);
-        error_log(" Token esperado para '$license_status': $expected_token");
+        error_log("🔐 Token recebido: " . $received_token);
+        error_log(" Status do Frontend para validação: " . $reported_license_status_from_frontend);
+        error_log(" Token esperado (hoje, com status {$reported_license_status_from_frontend}): " . $expected_token_today);
+        error_log(" Token esperado (ontem, com status {$reported_license_status_from_frontend}): " . $expected_token_yesterday);
         
-        if (!hash_equals($expected_token, $_POST['security_token'])) {
-            error_log("❌ Token inválido para status: $license_status");
-            wp_send_json_error(['message' => 'Invalid security token for status: ' . $license_status]);
+        // Verifica se o token recebido corresponde ao token de hoje ou de ontem, gerado com o status do frontend
+        if (!hash_equals($received_token, $expected_token_today) && !hash_equals($received_token, $expected_token_yesterday)) {
+            error_log("❌ Token inválido ou expirado. Status do Frontend reportado: {$reported_license_status_from_frontend}. ");
+            wp_send_json_error(['message' => 'Invalid or expired security token. License status mismatch from frontend.']);
             return;
         }
         
-        error_log("✅ Security token validado para status: $license_status");
+        error_log("✅ Security token validado (hoje ou ontem, com status do frontend) para status: " . $reported_license_status_from_frontend);
     } else {
-        error_log("❌ Security token ausente para analytics");
-        wp_send_json_error(['message' => 'Security token missing']);
+        error_log("❌ Security token ou license_status_at_load ausente para analytics");
+        wp_send_json_error(['message' => 'Security token or license status at load missing']);
         return;
     }
 
-    if (!isset($_POST['video_id']) || !isset($_POST['watch_data'])) {
-        wp_send_json_error(['message' => 'Dados incompletos']);
+    // --- INÍCIO DA CORREÇÃO DE VALIDAÇÃO DE DADOS ---
+    // NOVO: Verifica se video_id E watch_data estão presentes E não vazios
+    if (empty($_POST['video_id']) || !isset($_POST['watch_data']) || empty(json_decode(stripslashes($_POST['watch_data']), true))) {
+        error_log("❌ Analytics: Dados incompletos ou vazios para gravação. Video ID: " . ($_POST['video_id'] ?? 'N/A') . ", Watch Data set: " . (isset($_POST['watch_data']) ? 'SIM' : 'NÃO') . ", Watch Data vazio/inválido: " . (empty(json_decode(stripslashes($_POST['watch_data']), true)) ? 'SIM' : 'NÃO'));
+        wp_send_json_error(['message' => 'Dados incompletos ou vazios para gravação.']);
         return;
     }
+    // --- FIM DA CORREÇÃO ---
 
     $video_id = sanitize_text_field($_POST['video_id']);
-    $watch_data = json_decode(stripslashes($_POST['watch_data']), true);
-    
-    if (!is_array($watch_data)) {
+    $watch_data_raw = stripslashes($_POST['watch_data']); // Pega a string raw
+    $watch_data = json_decode($watch_data_raw, true); // Decodifica-a
+
+    if (!is_array($watch_data)) { // Esta verificação permanece válida para JSON malformado
+        error_log("❌ Analytics: Dados inválidos (watch_data não é um array). Raw: " . $watch_data_raw);
         wp_send_json_error(['message' => 'Dados inválidos']);
         return;
     }
@@ -1202,11 +1214,11 @@ function lumeplayer_save_analytics() {
         }
     }
     
-    error_log("✅ Analytics salvos para vídeo: $video_id (Status: $license_status, Pontos salvos: $saved_count)");
+    error_log("✅ Analytics salvos para vídeo: $video_id (Status backend: $current_backend_license_status, Pontos salvos: $saved_count)");
     wp_send_json_success([
         'message' => 'Analytics saved',
         'points_saved' => $saved_count,
-        'license_status' => $license_status
+        'license_status' => $current_backend_license_status
     ]);
 }
 
@@ -1345,7 +1357,7 @@ function converttize_add_new_video_handler() {
     // Insere uma entrada "dummy" na tabela de analytics para que o vídeo apareça na lista.
     // Usamos ON DUPLICATE KEY UPDATE para evitar erro se o vídeo já existir com time_point 0.
     $result = $wpdb->query($wpdb->prepare(
-        "INSERT INTO {$analytics_table} (video_id, time_point, views) VALUES (%s, %d, %d)
+            "INSERT INTO {$analytics_table} (video_id, time_point, views) VALUES (%s, %d, %d)
          ON DUPLICATE KEY UPDATE views = views + 0", // Garante que a linha exista/seja atualizada sem alterar 'views'
         $video_id,
         0, // time_point: 0
